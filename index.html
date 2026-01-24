@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Police Precinct Companion</title>
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0b1320" />
+
+  <!-- iOS PWA niceties -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">
+        <div class="badge">🚓</div>
+        <div>
+          <div class="title">Police Precinct</div>
+          <div class="subtitle">Companion App</div>
+        </div>
+      </div>
+
+      <button id="btnSettings" class="btn ghost" aria-expanded="false" aria-controls="settingsPanel">
+        ⚙️ Settings
+      </button>
+    </header>
+
+    <main class="main">
+      <section class="card">
+        <h1>Start Shift</h1>
+        <p class="muted">
+          Tap once to enable audio (required on mobile). Then random background sounds and events will run automatically.
+        </p>
+
+        <div class="row">
+          <button id="btnStart" class="btn primary">▶️ Start Shift</button>
+          <button id="btnStop" class="btn danger" disabled>⏹ Stop</button>
+        </div>
+
+        <div class="row">
+          <button id="btnDispatch" class="btn">📟 Dispatch Call</button>
+          <button id="btnCrisis" class="btn">🚨 Toggle Crisis</button>
+        </div>
+
+        <div class="status">
+          <div><span class="dot" id="dotRunning"></span> <span id="txtRunning">Stopped</span></div>
+          <div class="muted" id="txtNext">Next random SFX: —</div>
+        </div>
+      </section>
+
+      <section id="settingsPanel" class="card panel" hidden>
+        <h2>Audio</h2>
+
+        <label class="field">
+          <span>Master volume</span>
+          <input id="volMaster" type="range" min="0" max="1" step="0.01" />
+        </label>
+
+        <label class="field">
+          <span>Music volume</span>
+          <input id="volMusic" type="range" min="0" max="1" step="0.01" />
+        </label>
+
+        <label class="field">
+          <span>SFX volume</span>
+          <input id="volSfx" type="range" min="0" max="1" step="0.01" />
+        </label>
+
+        <h2>Random Background SFX</h2>
+
+        <label class="field">
+          <span>Min interval (sec)</span>
+          <input id="minInterval" type="number" min="2" max="600" step="1" />
+        </label>
+
+        <label class="field">
+          <span>Max interval (sec)</span>
+          <input id="maxInterval" type="number" min="2" max="600" step="1" />
+        </label>
+
+        <div class="grid2">
+          <label class="check"><input id="sfx_city" type="checkbox" /> City ambience</label>
+          <label class="check"><input id="sfx_radio" type="checkbox" /> Radio chatter</label>
+          <label class="check"><input id="sfx_beep" type="checkbox" /> Console beeps</label>
+          <label class="check"><input id="sfx_traffic" type="checkbox" /> Traffic</label>
+          <label class="check"><input id="sfx_siren" type="checkbox" /> Distant siren</label>
+        </div>
+
+        <div class="row">
+          <button id="btnSave" class="btn primary">💾 Save Settings</button>
+          <button id="btnReset" class="btn ghost">↩︎ Reset Defaults</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot muted">
+      Tip: Add to Home Screen for an app-like experience.
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
