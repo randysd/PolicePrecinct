@@ -1,8 +1,15 @@
-/* Police Precinct Companion - Plain JS PWA starter */
+/* Police Precinct Dispatcher - Plain JS PWA App */
 
+// ===== VERSION (bump this each deploy) =====
+const APP_VERSION = "2026.01.24.1";
+
+// ===== Helpers =====
 const $ = (id) => document.getElementById(id);
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-const STORAGE_KEY = "pp_companion_settings_v1";
+// ===== Settings persistence =====
+const STORAGE_KEY = "pp_dispatcher_settings_v1";
 
 const DEFAULTS = {
   volMaster: 0.9,
@@ -19,7 +26,29 @@ const DEFAULTS = {
   }
 };
 
-// --- Audio paths ---
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return structuredClone(DEFAULTS);
+    const parsed = JSON.parse(raw);
+
+    // Merge defaults so you can add fields later without breaking existing users
+    return {
+      ...structuredClone(DEFAULTS),
+      ...parsed,
+      enabled: { ...structuredClone(DEFAULTS.enabled), ...(parsed.enabled || {}) }
+    };
+  } catch {
+    return structuredClone(DEFAULTS);
+  }
+}
+
+function saveSettings(settings) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}
+
+// ===== Audio paths =====
+// Ensure these paths match your repo exactly (case-sensitive)
 const AUDIO = {
   music_main: "assets/audio/music_main.mp3",
   music_crisis: "assets/audio/music_crisis.mp3",
@@ -35,27 +64,18 @@ const AUDIO = {
 let settings = loadSettings();
 let running = false;
 let crisisMode = false;
+
 let sfxTimer = null;
 let nextSfxAt = null;
 
-// Use HTMLAudioElement for simplicity (fine for a companion app)
+// ===== Music players =====
 const music = {
   current: null,
   main: new Audio(AUDIO.music_main),
   crisis: new Audio(AUDIO.music_crisis)
 };
-
 music.main.loop = true;
 music.crisis.loop = true;
-
-// one-shot sfx helper
-function playSfx(src, gain = 1) {
-  const a = new Audio(src);
-  a.volume = clamp01(settings.volMaster * settings.volSfx * gain);
-  a.play().catch(() => {
-    // Autoplay restrictions: ignored if user hasn't tapped start yet
-  });
-}
 
 function setMusicVolume() {
   const v = clamp01(settings.volMaster * settings.volMusic);
@@ -68,25 +88,49 @@ function startMusic(isCrisis) {
   const target = isCrisis ? music.crisis : music.main;
   const other = isCrisis ? music.main : music.crisis;
 
-  // stop other track
   if (!other.paused) {
     other.pause();
     other.currentTime = 0;
   }
 
-  // start target
   target.currentTime = 0;
-  target.play().catch(() => {});
+  target.play().catch(() => {
+    // Mobile autoplay restrictions are normal until the user taps Start Shift
+  });
   music.current = target;
 }
 
 function stopAllAudio() {
-  [music.main, music.crisis].forEach(m => {
+  [music.main, music.crisis].forEach((m) => {
     m.pause();
     m.currentTime = 0;
   });
   music.current = null;
 }
+
+// one-shot SFX helper
+function playSfx(src, gain = 1) {
+  const a = new Audio(src);
+  a.volume = clamp01(settings.volMaster * settings.volSfx * gain);
+  a.play().catch(() => {
+    // Ignored if the user hasn't interacted yet
+  });
+}
+
+// ===== Random background SFX scheduler =====
+function updateNextLabel() {
+  const el = $("txtNext");
+  if (!el) return;
+
+  if (!running || !nextSfxAt) {
+    el.textContent = "Next random SFX: —";
+    return;
+  }
+  const sec = Math.max(0, Math.round((nextSfxAt - Date.now()) / 1000));
+  el.textContent = `Next random SFX: in ~${sec}s`;
+}
+
+setInterval(updateNextLabel, 500);
 
 function scheduleRandomSfx() {
   clearTimeout(sfxTimer);
@@ -97,7 +141,8 @@ function scheduleRandomSfx() {
     .map(([k]) => k);
 
   if (enabledKeys.length === 0) {
-    $("txtNext").textContent = "Next random SFX: (none enabled)";
+    nextSfxAt = null;
+    updateNextLabel();
     return;
   }
 
@@ -106,39 +151,30 @@ function scheduleRandomSfx() {
 
   const delay = randInt(minMs, maxMs);
   nextSfxAt = Date.now() + delay;
-
   updateNextLabel();
 
   sfxTimer = setTimeout(() => {
     const key = enabledKeys[randInt(0, enabledKeys.length - 1)];
-    // Slight variance in gain; siren a bit quieter by default
-    const gain = (key === "siren") ? 0.7 : 1.0;
+    const gain = key === "siren" ? 0.7 : 1.0;
     playSfx(AUDIO[key], gain);
-
-    // Re-schedule
     scheduleRandomSfx();
   }, delay);
 }
 
-function updateNextLabel() {
-  if (!running || !nextSfxAt) {
-    $("txtNext").textContent = "Next random SFX: —";
-    return;
-  }
-  const sec = Math.max(0, Math.round((nextSfxAt - Date.now()) / 1000));
-  $("txtNext").textContent = `Next random SFX: in ~${sec}s`;
-}
-
-setInterval(updateNextLabel, 500);
-
-// --- UI actions ---
+// ===== UI State =====
 function setRunning(on) {
   running = on;
-  $("btnStart").disabled = on;
-  $("btnStop").disabled = !on;
 
-  $("dotRunning").classList.toggle("on", on);
-  $("txtRunning").textContent = on ? (crisisMode ? "Running (CRISIS)" : "Running") : "Stopped";
+  const btnStart = $("btnStart");
+  const btnStop = $("btnStop");
+  if (btnStart) btnStart.disabled = on;
+  if (btnStop) btnStop.disabled = !on;
+
+  const dot = $("dotRunning");
+  if (dot) dot.classList.toggle("on", on);
+
+  const txt = $("txtRunning");
+  if (txt) txt.textContent = on ? (crisisMode ? "Running (CRISIS)" : "Running") : "Stopped";
 
   if (!on) {
     clearTimeout(sfxTimer);
@@ -147,7 +183,7 @@ function setRunning(on) {
     stopAllAudio();
     updateNextLabel();
   } else {
-    // audio begins on explicit user action
+    // Must be triggered by a user gesture (Start Shift button) on mobile
     startMusic(crisisMode);
     scheduleRandomSfx();
   }
@@ -156,144 +192,165 @@ function setRunning(on) {
 function toggleCrisis() {
   crisisMode = !crisisMode;
   playSfx(AUDIO.crisis, 1.0);
+
   if (running) startMusic(crisisMode);
-  $("txtRunning").textContent = running ? (crisisMode ? "Running (CRISIS)" : "Running") : "Stopped";
+
+  const txt = $("txtRunning");
+  if (txt) txt.textContent = running ? (crisisMode ? "Running (CRISIS)" : "Running") : "Stopped";
 }
 
 function fireDispatch() {
   playSfx(AUDIO.dispatch, 1.0);
-  // you can also show a UI toast/notification here later
 }
 
-// --- Settings UI ---
+// ===== Settings Panel =====
 function bindSettingsToUI() {
-  $("volMaster").value = settings.volMaster;
-  $("volMusic").value = settings.volMusic;
-  $("volSfx").value = settings.volSfx;
+  if ($("volMaster")) $("volMaster").value = settings.volMaster;
+  if ($("volMusic")) $("volMusic").value = settings.volMusic;
+  if ($("volSfx")) $("volSfx").value = settings.volSfx;
 
-  $("minInterval").value = settings.minIntervalSec;
-  $("maxInterval").value = settings.maxIntervalSec;
+  if ($("minInterval")) $("minInterval").value = settings.minIntervalSec;
+  if ($("maxInterval")) $("maxInterval").value = settings.maxIntervalSec;
 
-  $("sfx_city").checked = !!settings.enabled.city;
-  $("sfx_radio").checked = !!settings.enabled.radio;
-  $("sfx_beep").checked = !!settings.enabled.beep;
-  $("sfx_traffic").checked = !!settings.enabled.traffic;
-  $("sfx_siren").checked = !!settings.enabled.siren;
+  if ($("sfx_city")) $("sfx_city").checked = !!settings.enabled.city;
+  if ($("sfx_radio")) $("sfx_radio").checked = !!settings.enabled.radio;
+  if ($("sfx_beep")) $("sfx_beep").checked = !!settings.enabled.beep;
+  if ($("sfx_traffic")) $("sfx_traffic").checked = !!settings.enabled.traffic;
+  if ($("sfx_siren")) $("sfx_siren").checked = !!settings.enabled.siren;
 }
 
 function readSettingsFromUI() {
-  const minI = Number($("minInterval").value);
-  const maxI = Number($("maxInterval").value);
+  const minI = Number($("minInterval")?.value);
+  const maxI = Number($("maxInterval")?.value);
 
   settings = {
-    volMaster: Number($("volMaster").value),
-    volMusic: Number($("volMusic").value),
-    volSfx: Number($("volSfx").value),
+    volMaster: Number($("volMaster")?.value ?? DEFAULTS.volMaster),
+    volMusic: Number($("volMusic")?.value ?? DEFAULTS.volMusic),
+    volSfx: Number($("volSfx")?.value ?? DEFAULTS.volSfx),
     minIntervalSec: Number.isFinite(minI) ? minI : DEFAULTS.minIntervalSec,
     maxIntervalSec: Number.isFinite(maxI) ? maxI : DEFAULTS.maxIntervalSec,
     enabled: {
-      city: $("sfx_city").checked,
-      radio: $("sfx_radio").checked,
-      beep: $("sfx_beep").checked,
-      traffic: $("sfx_traffic").checked,
-      siren: $("sfx_siren").checked
+      city: !!$("sfx_city")?.checked,
+      radio: !!$("sfx_radio")?.checked,
+      beep: !!$("sfx_beep")?.checked,
+      traffic: !!$("sfx_traffic")?.checked,
+      siren: !!$("sfx_siren")?.checked
     }
   };
 
-  // enforce sane min/max
   if (settings.maxIntervalSec < settings.minIntervalSec) {
     settings.maxIntervalSec = settings.minIntervalSec;
   }
 }
 
-function saveSettings() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-}
-
-function loadSettings() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return structuredClone(DEFAULTS);
-    const parsed = JSON.parse(raw);
-
-    // merge defaults to handle new fields later
-    return {
-      ...structuredClone(DEFAULTS),
-      ...parsed,
-      enabled: { ...structuredClone(DEFAULTS.enabled), ...(parsed.enabled || {}) }
-    };
-  } catch {
-    return structuredClone(DEFAULTS);
-  }
-}
-
 function resetDefaults() {
   settings = structuredClone(DEFAULTS);
-  saveSettings();
+  saveSettings(settings);
   bindSettingsToUI();
-  if (running) {
-    setMusicVolume();
-    scheduleRandomSfx();
-  }
+  setMusicVolume();
+  if (running) scheduleRandomSfx();
 }
 
-// --- panel toggling ---
 function toggleSettingsPanel() {
   const panel = $("settingsPanel");
   const btn = $("btnSettings");
+  if (!panel) return;
+
   const isHidden = panel.hasAttribute("hidden");
   if (isHidden) {
     panel.removeAttribute("hidden");
-    btn.setAttribute("aria-expanded", "true");
+    btn?.setAttribute("aria-expanded", "true");
   } else {
     panel.setAttribute("hidden", "");
-    btn.setAttribute("aria-expanded", "false");
+    btn?.setAttribute("aria-expanded", "false");
   }
 }
 
-// --- helpers ---
-function randInt(min, max) {
-  // inclusive
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
+// ===== Update banner (Service Worker update flow) =====
+let swReg = null;
+
+function showUpdateBanner() {
+  const banner = $("updateBanner");
+  if (!banner) return;
+
+  banner.hidden = false;
+
+  const btn = $("btnUpdateReload");
+  if (btn) {
+    btn.onclick = async () => {
+      // Tell waiting SW to activate now
+      if (swReg && swReg.waiting) {
+        swReg.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+      // Fallback
+      window.location.reload();
+    };
+  }
 }
 
-// --- event wiring ---
+// ===== Wire up events =====
 window.addEventListener("DOMContentLoaded", () => {
+  // Version stamp
+  const v = $("appVersion");
+  if (v) v.textContent = APP_VERSION;
+
+  // Initial UI
   bindSettingsToUI();
   setMusicVolume();
+  setRunning(false);
 
-  $("btnStart").addEventListener("click", () => setRunning(true));
-  $("btnStop").addEventListener("click", () => setRunning(false));
+  // Buttons
+  $("btnStart")?.addEventListener("click", () => setRunning(true));
+  $("btnStop")?.addEventListener("click", () => setRunning(false));
+  $("btnDispatch")?.addEventListener("click", fireDispatch);
+  $("btnCrisis")?.addEventListener("click", toggleCrisis);
+  $("btnSettings")?.addEventListener("click", toggleSettingsPanel);
 
-  $("btnDispatch").addEventListener("click", fireDispatch);
-  $("btnCrisis").addEventListener("click", toggleCrisis);
-
-  $("btnSettings").addEventListener("click", toggleSettingsPanel);
-
-  $("btnSave").addEventListener("click", () => {
+  $("btnSave")?.addEventListener("click", () => {
     readSettingsFromUI();
-    saveSettings();
+    saveSettings(settings);
     setMusicVolume();
     if (running) scheduleRandomSfx();
   });
 
-  $("btnReset").addEventListener("click", resetDefaults);
+  $("btnReset")?.addEventListener("click", resetDefaults);
 
-  // live volume preview as you drag sliders
-  ["volMaster","volMusic"].forEach(id => {
-    $(id).addEventListener("input", () => {
+  // Live slider preview for volumes
+  ["volMaster", "volMusic", "volSfx"].forEach((id) => {
+    $(id)?.addEventListener("input", () => {
       readSettingsFromUI();
       setMusicVolume();
     });
   });
 });
 
-// --- PWA service worker registration ---
+// ===== PWA service worker registration + update detection =====
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+  window.addEventListener("load", async () => {
+    try {
+      swReg = await navigator.serviceWorker.register("sw.js");
+
+      // If a waiting SW already exists (rare), show banner
+      if (swReg.waiting) showUpdateBanner();
+
+      swReg.addEventListener("updatefound", () => {
+        const newWorker = swReg.installing;
+        if (!newWorker) return;
+
+        newWorker.addEventListener("statechange", () => {
+          // Installed and there's an active controller => update ready (waiting)
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
+
+      // When the new SW takes control, reload to ensure new assets are used
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        window.location.reload();
+      });
+    } catch (e) {
+      console.warn("Service worker registration failed", e);
+    }
   });
 }

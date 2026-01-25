@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Police Precinct Companion</title>
+  <title>Police Precinct Dispatcher</title>
 
   <link rel="stylesheet" href="styles.css" />
   <link rel="manifest" href="manifest.webmanifest" />
@@ -15,13 +15,24 @@
 </head>
 
 <body>
+
+<!-- Update banner (hidden by default) -->
+<div id="updateBanner" class="update-banner" hidden>
+  <div>
+    <strong>Update available</strong>
+    <div class="muted">Tap reload to get the latest version.</div>
+  </div>
+  <button id="btnUpdateReload" class="btn primary">Reload</button>
+</div>
+
+
   <div class="wrap">
     <header class="top">
       <div class="brand">
         <div class="badge">🚓</div>
         <div>
           <div class="title">Police Precinct</div>
-          <div class="subtitle">Companion App</div>
+          <div class="subtitle">Dispatcher App</div>
         </div>
       </div>
 
@@ -100,6 +111,10 @@
 
     <footer class="foot muted">
       Tip: Add to Home Screen for an app-like experience.
+<div class="muted" style="margin-top:10px;">
+  Version: <span id="appVersion">—</span>
+</div>
+
     </footer>
   </div>
 
