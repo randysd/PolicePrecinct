@@ -325,13 +325,14 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // ===== PWA service worker registration + update detection =====
-const DISABLE_SW = true; // TEMP: set to true to recover site
+const DISABLE_SW = false; // keep false in normal operation
 
 if ("serviceWorker" in navigator && !DISABLE_SW) {
   window.addEventListener("load", async () => {
     try {
       swReg = await navigator.serviceWorker.register("/sw.js");
 
+      // If a waiting SW already exists (rare), show banner
       if (swReg.waiting) showUpdateBanner();
 
       swReg.addEventListener("updatefound", () => {
@@ -339,16 +340,17 @@ if ("serviceWorker" in navigator && !DISABLE_SW) {
         if (!newWorker) return;
 
         newWorker.addEventListener("statechange", () => {
+          // Installed and there's an active controller => update ready (waiting)
           if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
             showUpdateBanner();
           }
         });
       });
 
-      // IMPORTANT: disable auto-reload for now (it’s what makes the failure immediate)
-      // navigator.serviceWorker.addEventListener("controllerchange", () => {
-      //   window.location.reload();
-      // });
+      // IMPORTANT:
+      // Do NOT auto-reload on controllerchange.
+      // We'll only reload when the user taps the banner button.
+      // This prevents "brick the site instantly" failure modes.
 
     } catch (e) {
       console.warn("Service worker registration failed", e);
