@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "lostcat",
+      "head": "LOST",
+      "textTpl": "Orange cat ‘Marlowe’. Last seen near Block {witnessBlock} apartments.",
+      "tags": ["investigation", "calm"]
+    },
+    {
+      "id": "pawn2",
+      "head": "CASH",
+      "textTpl": "Pawn & trade buzzing near Block {weaponBlock}. Watches, tools, “collectibles”.",
+      "tags": ["arrest", "investigation"]
+    },
+    {
+      "id": "tow2",
+      "head": "TOWING",
+      "textTpl": "24/7 towing servicing Block {hotBlock} first. Accidents welcome.",
+      "tags": ["emergency", "night"]
+    }
+  ]
+}

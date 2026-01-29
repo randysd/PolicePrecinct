@@ -1,0 +1,26 @@
+{
+  "items": [
+    {
+      "id": "donut",
+      "type": "image",
+      "src": "ad_donut_shop.png",
+      "alt": "Donut ad",
+      "tags": ["night", "calm", "investigation"]
+    },
+    {
+      "id": "tow",
+      "type": "image",
+      "src": "ad_tow_truck.png",
+      "alt": "Tow service ad",
+      "tags": ["emergency", "night"]
+    },
+    {
+      "id": "coffee",
+      "type": "text",
+      "title": "NIGHT OWL COFFEE",
+      "body": "Open 24/7. Free refills for uniformed officers.",
+      "fine": "Corner of 6th & Marlowe",
+      "tags": ["night", "investigation"]
+    }
+  ]
+}

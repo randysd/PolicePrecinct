@@ -1,121 +1,244 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Police Precinct Dispatcher</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Police Precinct: Dispatcher</title>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#0b1320" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 
   <link rel="stylesheet" href="styles.css" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0b1320" />
-
-  <!-- iOS PWA niceties -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
-
 <body>
+  <header class="app-header">
 
-<!-- Update banner (hidden by default) -->
-<div id="updateBanner" class="update-banner" hidden>
-  <div>
-    <strong>Update available</strong>
-    <div class="muted">Tap reload to get the latest version.</div>
+<!-- UPDATE BANNER -->
+<div id="updateBanner" class="update-banner hidden">
+  <div class="update-text">
+    Update available
+    <span class="muted">— refresh to load the latest version.</span>
   </div>
-  <button id="btnUpdateReload" class="btn primary">Reload</button>
+  <div class="update-actions">
+    <button class="btn small" id="btnUpdateLater">Later</button>
+    <button class="btn small primary" id="btnUpdateNow">Refresh</button>
+  </div>
 </div>
 
 
-  <div class="wrap">
-    <header class="top">
-      <div class="brand">
-        <div class="badge">🚓</div>
-        <div>
-          <div class="title">Police Precinct</div>
-          <div class="subtitle">Dispatcher App</div>
+    <div class="brand">
+      <div class="brand-title">Police Precinct: Dispatcher</div>
+      <div class="brand-subtitle">Companion App</div>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-btn hidden" id="btnInstallApp" title="Install App">⬇️</button>
+      <button class="icon-btn" id="btnStartPlayer" title="Starting Player Selector">🛡️</button>
+      <button class="icon-btn" id="btnDice" title="Dice Roller">🎲</button>
+      <button class="icon-btn" id="btnQuickAudio" title="Audio">🔊</button>
+      <button class="icon-btn" id="btnOpenSettings" title="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- HOME VIEW -->
+    <section id="viewHome" class="view">
+      <div class="panel">
+        <div class="panel-body">
+          <div class="hero">
+            <div class="hero-title">Dispatcher Console</div>
+            <div class="hero-text">
+              Track team actions, radio dispatches, commendations, and timed crises.
+            </div>
+          </div>
+
+          <div class="home-buttons">
+            <button class="btn primary" id="btnBeginShift">Begin Shift</button>
+            <button class="btn" id="btnSetup">Setup</button>
+            <button class="btn" id="btnSettings">Settings</button>
+          </div>
+
+          <div class="home-secondary">
+            <button class="btn subtle" id="btnHowTo">How to Use</button>
+            <button class="btn subtle" id="btnClearData">Reset App Data</button>
+          </div>
+
+          <div class="hint">
+            Tip: The main game screen is designed to fit without scrolling on mobile.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME VIEW -->
+    <section id="viewGame" class="view">
+      <div class="game-topbar">
+        <div class="topbar-left">
+          <div class="stat-pill" id="pillOverall">
+            Overall: <span class="mono" id="overallPct">0%</span>
+          </div>
+          <div class="stat-pill">
+            Actions: <span class="mono" id="overallActions">0</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="btn small" id="btnActivityLog">Case Log</button>
+          <button class="btn small warn" id="btnEndShift">End Shift</button>
         </div>
       </div>
 
-      <button id="btnSettings" class="btn ghost" aria-expanded="false" aria-controls="settingsPanel">
-        ⚙️ Settings
-      </button>
-    </header>
+      <!-- Active Dispatches strip -->
+      <div id="activeDispatchStrip" class="dispatch-strip hidden">
+        <div class="dispatch-title">Active Dispatches</div>
 
-    <main class="main">
-      <section class="card">
-        <h1>Start Shift</h1>
-        <p class="muted">
-          Tap once to enable audio (required on mobile). Then random background sounds and events will run automatically.
-        </p>
+        <div class="dispatch-scroll-wrap">
+          <div class="dispatch-fade left" id="dispatchFadeLeft"></div>
+          <div class="dispatch-fade right" id="dispatchFadeRight"></div>
 
-        <div class="row">
-          <button id="btnStart" class="btn primary">▶️ Start Shift</button>
-          <button id="btnStop" class="btn danger" disabled>⏹ Stop</button>
+          <div id="activeDispatchList" class="dispatch-scroll"></div>
+        </div>
+      </div>
+
+
+      <div class="grid-3">
+        <!-- Investigation -->
+        <div class="card" data-cat="investigation">
+          <div class="card-header">
+            <div class="card-title">Investigation</div>
+            <div class="card-meta"><span class="mono" id="investigationPct">0%</span></div>
+          </div>
+
+          <div class="card-body">
+            <div class="btn-row">
+              <button class="btn success" data-action="success" data-cat="investigation">SUCCESS</button>
+              <button class="btn danger" data-action="fail" data-cat="investigation">FAIL</button>
+            </div>
+
+            <div class="counts">
+              <div>✅ <span class="mono" id="investigationSuccess">0</span></div>
+              <div>❌ <span class="mono" id="investigationFail">0</span></div>
+            </div>
+
+            <div class="progress-wrap" id="investigationCommWrap">
+              <div class="progress-label">
+                Commendation: <span class="mono" id="investigationCommText">0/3</span>
+              </div>
+              <div class="progress">
+                <div class="bar" id="investigationCommBar" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="row">
-          <button id="btnDispatch" class="btn">📟 Dispatch Call</button>
-          <button id="btnCrisis" class="btn">🚨 Toggle Crisis</button>
+        <!-- Arrest -->
+        <div class="card" data-cat="arrest">
+          <div class="card-header">
+            <div class="card-title">Arrest</div>
+            <div class="card-meta"><span class="mono" id="arrestPct">0%</span></div>
+          </div>
+
+          <div class="card-body">
+            <div class="btn-row">
+              <button class="btn success" data-action="success" data-cat="arrest">SUCCESS</button>
+              <button class="btn danger" data-action="fail" data-cat="arrest">FAIL</button>
+            </div>
+
+            <div class="counts">
+              <div>✅ <span class="mono" id="arrestSuccess">0</span></div>
+              <div>❌ <span class="mono" id="arrestFail">0</span></div>
+            </div>
+
+            <div class="progress-wrap" id="arrestCommWrap">
+              <div class="progress-label">
+                Commendation: <span class="mono" id="arrestCommText">0/4</span>
+              </div>
+              <div class="progress">
+                <div class="bar" id="arrestCommBar" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="status">
-          <div><span class="dot" id="dotRunning"></span> <span id="txtRunning">Stopped</span></div>
-          <div class="muted" id="txtNext">Next random SFX: —</div>
+        <!-- Emergency -->
+        <div class="card" data-cat="emergency">
+          <div class="card-header">
+            <div class="card-title">Emergency</div>
+            <div class="card-meta"><span class="mono" id="emergencyPct">0%</span></div>
+          </div>
+
+          <div class="card-body">
+            <div class="btn-row">
+              <button class="btn success" data-action="success" data-cat="emergency">SUCCESS</button>
+              <button class="btn danger" data-action="fail" data-cat="emergency">FAIL</button>
+            </div>
+
+            <div class="counts">
+              <div>✅ <span class="mono" id="emergencySuccess">0</span></div>
+              <div>❌ <span class="mono" id="emergencyFail">0</span></div>
+            </div>
+
+            <div class="progress-wrap" id="emergencyCommWrap">
+              <div class="progress-label">
+                Commendation: <span class="mono" id="emergencyCommText">0/5</span>
+              </div>
+              <div class="progress">
+                <div class="bar" id="emergencyCommBar" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section id="settingsPanel" class="card panel" hidden>
-        <h2>Audio</h2>
-
-        <label class="field">
-          <span>Master volume</span>
-          <input id="volMaster" type="range" min="0" max="1" step="0.01" />
-        </label>
-
-        <label class="field">
-          <span>Music volume</span>
-          <input id="volMusic" type="range" min="0" max="1" step="0.01" />
-        </label>
-
-        <label class="field">
-          <span>SFX volume</span>
-          <input id="volSfx" type="range" min="0" max="1" step="0.01" />
-        </label>
-
-        <h2>Random Background SFX</h2>
-
-        <label class="field">
-          <span>Min interval (sec)</span>
-          <input id="minInterval" type="number" min="2" max="600" step="1" />
-        </label>
-
-        <label class="field">
-          <span>Max interval (sec)</span>
-          <input id="maxInterval" type="number" min="2" max="600" step="1" />
-        </label>
-
-        <div class="grid2">
-          <label class="check"><input id="sfx_city" type="checkbox" /> City ambience</label>
-          <label class="check"><input id="sfx_radio" type="checkbox" /> Radio chatter</label>
-          <label class="check"><input id="sfx_beep" type="checkbox" /> Console beeps</label>
-          <label class="check"><input id="sfx_traffic" type="checkbox" /> Traffic</label>
-          <label class="check"><input id="sfx_siren" type="checkbox" /> Distant siren</label>
+      <footer class="game-footer">
+        <div class="footer-left">
+          <button class="btn small" id="btnOpenSettings2">Settings</button>
         </div>
-
-        <div class="row">
-          <button id="btnSave" class="btn primary">💾 Save Settings</button>
-          <button id="btnReset" class="btn ghost">↩︎ Reset Defaults</button>
+        <div class="footer-right">
+          <div class="tiny muted">v0.2 PWA bones build</div>
         </div>
-      </section>
-    </main>
+      </footer>
+    </section>
+  </main>
 
-    <footer class="foot muted">
-      Tip: Add to Home Screen for an app-like experience.
-<div class="muted" style="margin-top:10px;">
-  Version: <span id="appVersion">—</span>
-</div>
+  <!-- MODAL OVERLAY -->
+  <div id="modalOverlay" class="overlay hidden" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Modal</div>
+        <div class="modal-header-center" id="modalHeaderCenter"></div>
+        <button class="icon-btn" id="btnCloseModal" title="Close">✖</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
 
-    </footer>
+  <!-- STARTING PLAYER SELECTOR (FULLSCREEN) -->
+  <div id="startPlayerOverlay" class="overlay hidden startplayer-overlay" aria-hidden="true">
+    <div class="startplayer-shell" role="dialog" aria-modal="true" aria-labelledby="startPlayerTitle">
+      <div class="startplayer-header">
+        <div class="startplayer-title" id="startPlayerTitle">Starting Player Selector</div>
+        <button class="icon-btn" id="btnCloseStartPlayer" title="Close">✖</button>
+      </div>
+
+      <div class="startplayer-stage" id="startPlayerStage">
+        <canvas id="startPlayerCanvas"></canvas>
+
+        <div class="startplayer-hud">
+          <div class="startplayer-hint" id="startPlayerHint">
+            Place a finger on the screen. When everyone is ready, hold steady to randomly choose.
+          </div>
+
+          <div class="startplayer-countdown hidden" id="startPlayerCountdown">
+            Choosing in <span class="mono" id="startPlayerCountdownNum">3</span>…
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

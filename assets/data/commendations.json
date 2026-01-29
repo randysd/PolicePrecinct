@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "id": "com_inv_1",
+      "category": "investigation",
+      "title": "Exceptional Detective Work",
+      "text": "Take 1 Police Card from the supply OR remove 1 Punk from any block.",
+      "reward": { "type": "choice", "options": ["gain_police_card", "remove_punk"] }
+    },
+    {
+      "id": "com_eme_1",
+      "category": "emergency",
+      "title": "Crisis Contained",
+      "text": "Remove 1 Emergency from the board OR reduce Crime Track by 1.",
+      "reward": { "type": "choice", "options": ["remove_emergency", "reduce_crime_track"] }
+    }
+  ]
+}

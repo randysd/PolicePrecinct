@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "crisis_bomb",
+      "title": "Bomb Threat",
+      "seconds": 60,
+      "instructions": "All players roll 1 die. If anyone rolls a 6 before time runs out, press RESOLVED.",
+      "successText": "Bomb defused. Remove 1 Emergency from the board.",
+      "failText": "Explosion shakes the city. Advance Crime Track by 1.",
+      "tags": ["emergency", "night"]
+    },
+    {
+      "id": "crisis_hostage",
+      "title": "Hostage Situation",
+      "seconds": 45,
+      "instructions": "All players roll 1 die. If total rolled is 18+ before time runs out, press RESOLVED.",
+      "successText": "Hostages freed. Gain 1 Police Card.",
+      "failText": "Situation escalates. Add 1 Punk to a random block (max 3).",
+      "tags": ["arrest", "emergency"]
+    }
+  ]
+}

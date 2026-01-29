@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "inv_help_1",
+      "category": "investigation",
+      "polarity": "helpful",
+      "title": "Tip From a Witness",
+      "text": "Next Investigation: draw +1 card, then discard 1.",
+      "effect": { "type": "investigation_draw_bonus", "amount": 1, "duration": "next_action" },
+      "tags": ["investigation"]
+    },
+    {
+      "id": "arr_hurt_1",
+      "category": "arrest",
+      "polarity": "hurtful",
+      "title": "Radio Dead Zone",
+      "text": "Next Arrest: roll -1 die (min 1).",
+      "effect": { "type": "arrest_dice_penalty", "amount": 1, "duration": "next_action" },
+      "tags": ["arrest", "night"]
+    }
+  ]
+}
