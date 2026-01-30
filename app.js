@@ -478,8 +478,11 @@
         c.commProgress = 0;
         g.commendations[cat] += 1;
 
-        const msg = pickCommendation(cat);
-        g.log.unshift({ t: Date.now(), type: "commendation", cat, text: msg });
+        const comm = pickCommendation(cat);
+        const commTitle = (comm && typeof comm === "object") ? (comm.title || `${cap(cat)} Commendation`) : `${cap(cat)} Commendation`;
+        const commText = (comm && typeof comm === "object") ? (comm.text || comm.title || "Commendation issued.") : (comm || "Commendation issued.");
+
+        g.log.unshift({ t: Date.now(), type: "commendation", cat, text: commText, title: commTitle });
 
         audio.playUi(AUDIO_FILES.commendation);
 
@@ -487,8 +490,8 @@
           title: "Commendation Awarded",
           bodyHtml: `
             <div class="item">
-              <div class="item-title">${cap(cat)} Commendation</div>
-              <div class="item-text">${escapeHtml(msg)}</div>
+              <div class="item-title">${escapeHtml(commTitle)}</div>
+              <div class="item-text">${escapeHtml(commText)}</div>
             </div>
           `,
           primaryText: "Acknowledge",
@@ -516,7 +519,24 @@
 
     const catRate = getSuccessRate(cat);
     const helpful = catRate < 0.60;
-    const dispatch = buildDispatch(cat, helpful);
+
+    // Prefer JSON-driven dispatch content; fallback to legacy pools.
+    const polarity = helpful ? "helpful" : "hurtful";
+    const picked = pickDispatch(cat, polarity);
+
+    const dispatch = picked
+      ? {
+          id: uid(),
+          cat,
+          helpful,
+          title: picked.title || "Radio Dispatch",
+          text: picked.text || "Dispatch update received.",
+          // Keep the raw object (if any) but always show a friendly string in UI
+          effectObj: picked.effect,
+          effect: formatEffect(picked.effect, cat),
+          short: picked.title ? picked.title : (helpful ? "Bonus" : "Penalty")
+        }
+      : buildDispatch(cat, helpful);
 
     g.activeDispatches.unshift(dispatch);
     g.log.unshift({ t: Date.now(), type: "dispatch", cat, helpful, text: dispatch.text });
@@ -1389,6 +1409,18 @@ function openStartingPlayerSelector() {
         </div>
 
         <div class="item">
+          <div class="item-title">Haptics</div>
+          <div class="row">
+            <button class="btn" id="btnTestHaptics">Test Vibration</button>
+            <div class="field" style="flex:1;">
+              <div class="label">Status</div>
+              <div class="tiny muted" id="hapticsStatus">—</div>
+            </div>
+          </div>
+          <div class="tiny muted">Note: Vibration only works on supported devices/browsers and may be blocked in some contexts.</div>
+        </div>
+
+        <div class="item">
           <div class="item-title">Features</div>
           <div class="row">
             <div class="field">
@@ -1441,6 +1473,18 @@ function openStartingPlayerSelector() {
         { text: "Close", className: "btn primary", onClick: () => { closeModal(); renderGame(); } }
       ],
       onOpen: () => {
+        // Haptics debug/test
+        const hapticsStatus = $("#hapticsStatus");
+        const hasVibrate = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+        hapticsStatus.textContent = hasVibrate ? "Supported (requires user gesture)" : "Not supported";
+
+        $("#btnTestHaptics").addEventListener("click", () => {
+          const ok = hasVibrate ? navigator.vibrate([20, 30, 20]) : false;
+          hapticsStatus.textContent = hasVibrate
+            ? (ok ? "Vibration requested ✅" : "Vibration blocked by browser/OS ❌")
+            : "Not supported";
+        });
+
         const readBool = (id) => $(`#${id}`).value === "true";
         $("#setMusicEnabled").addEventListener("change", () => {
           s.audio.musicEnabled = readBool("setMusicEnabled");
@@ -1878,7 +1922,7 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
   // -------------------------
   // Content generators
   // -------------------------
-  function pickCommendation(cat) {
+  function pickCommendationLegacy(cat) {
     const pool = {
       investigation: [
         "Forensics fast-track — draw +1 card on your next Investigate action.",
@@ -2346,6 +2390,54 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
     return { max, hot };
   }
 
+  function getReportContext() {
+    // Prefer the user's Setup rolls if available so the article feels consistent.
+    const gen = state.setupDraft?.generated;
+
+    const weaponBlock = clampInt(gen?.murderWeaponBlock ?? gen?.weaponBlock ?? randInt(1, 6), 1, 6);
+    const witnessBlock = clampInt(gen?.witnessBlock ?? randInt(1, 6), 1, 6);
+
+    const punks = gen?.punksByBlock || null;
+    const hotInfo = punks ? getHotBlocks(punks) : { hot: [] };
+    const hotBlock = clampInt(hotInfo.hot?.[0] ?? weaponBlock, 1, 6);
+
+    return { weaponBlock, witnessBlock, hotBlock };
+  }
+
+  function applyTemplate(tpl, ctx) {
+    if (!tpl) return "";
+    return String(tpl).replace(/\{(\w+)\}/g, (_, key) => {
+      const v = ctx?.[key];
+      return (v === null || v === undefined) ? "" : String(v);
+    });
+  }
+
+  function formatEffect(effect, cat) {
+    if (!effect) return "No effect.";
+    if (typeof effect === "string") return effect;
+
+    if (typeof effect === "object") {
+      const t = effect.type || "";
+      const amt = Number(effect.amount ?? effect.value ?? 0);
+
+      switch (t) {
+        case "investigation_draw_bonus":
+          return `Next Investigation: draw +${amt || 1} card${(amt || 1) === 1 ? "" : "s"}.`;
+        case "arrest_dice_penalty":
+          return `Next Arrest: roll -${amt || 1} die (min 1).`;
+        case "arrest_dice_bonus":
+          return `Next Arrest: roll +${amt || 1} die.`;
+        case "emergency_total_bonus":
+          return `Next Emergency: +${amt || 1} to your total.`;
+        default:
+          // Best-effort readable fallback
+          return effect.text || effect.description || (t ? `Effect: ${t}` : JSON.stringify(effect));
+      }
+    }
+
+    return String(effect);
+  }
+
   function renderClassifieds() {
     const g = state.game;
     const host = $("#npClassifieds");
@@ -2371,6 +2463,8 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
     const g = state.game;
     if (!g) return [];
 
+    const ctx = getReportContext();
+
     const focus = getGameFocusProfile(g);
     const count = randInt(3, 6);
 
@@ -2391,7 +2485,12 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
       if (!c) break;
       if (used.has(c.id)) continue;
       used.add(c.id);
-      picked.push(c);
+      picked.push({
+        id: c.id,
+        head: c.head || c.label || "NOTICE",
+        text: applyTemplate(c.textTpl || c.text || "", ctx),
+        tags: c.tags || []
+      });
     }
     return picked;
   }

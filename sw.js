@@ -1,6 +1,6 @@
 /* service-worker.js */
 // Bump this any time you change the precache list or caching strategy
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v8";
 const CACHE_NAME = `pp-dispatcher-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pp-dispatcher-runtime-${CACHE_VERSION}`;
 
@@ -19,6 +19,12 @@ const APP_SHELL = [
   "./assets/data/dispatches.json",
   "./assets/data/commendations.json",
   "./assets/data/crises.json",
+
+  // Newspaper ad images (precache so they always render, even offline)
+  "./assets/ads/ad_donut_shop.png",
+  "./assets/ads/ad_tow_truck.png",
+  "./assets/ads/ad_pawn_shop.png",
+  "./assets/ads/ad_diner.png",
 
   // Audio: precache known files
   "./assets/audio/music_main.mp3",
