@@ -271,7 +271,8 @@
   // -------------------------
   function wireGlobal() {
     btnBeginShift.addEventListener("click", async () => {
-      if (!state.game?.active) startNewGame();
+      // Route FIRST so a persistence failure can't abort navigation.
+      // The game view will start a new shift if needed.
       location.hash = "#/game";
       // user gesture happened; safe to attempt audio start
       await audio.userGestureKick();
@@ -2058,8 +2059,57 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
     }
   }
 
+  // -------------------------
+  // Persistence (robust)
+  // -------------------------
+  // NOTE: localStorage has a small quota and can throw QuotaExceededError.
+  // If that exception bubbles out of a click handler, it can look like the app
+  // "froze" (navigation never happens because the handler aborts).
+  //
+  // This app's state can grow over time (e.g., shift log/history). We cap
+  // growth and catch storage errors so the UI keeps running even if persistence
+  // fails.
+  const MAX_GAME_LOG = 250;
+  const MAX_HISTORY = 50;
+  const MAX_ACTIVE_DISPATCHES = 25;
+
+  function trimStateForStorage() {
+    try {
+      if (state?.game?.log && Array.isArray(state.game.log) && state.game.log.length > MAX_GAME_LOG) {
+        state.game.log = state.game.log.slice(0, MAX_GAME_LOG);
+      }
+      if (state?.history && Array.isArray(state.history) && state.history.length > MAX_HISTORY) {
+        state.history = state.history.slice(0, MAX_HISTORY);
+      }
+      if (state?.game?.activeDispatches && Array.isArray(state.game.activeDispatches) && state.game.activeDispatches.length > MAX_ACTIVE_DISPATCHES) {
+        state.game.activeDispatches = state.game.activeDispatches.slice(0, MAX_ACTIVE_DISPATCHES);
+      }
+    } catch (_) {
+      // no-op
+    }
+  }
+
   function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try {
+      trimStateForStorage();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return true;
+    } catch (e) {
+      // QuotaExceededError or storage blocked (private mode / iOS PWA constraints)
+      try {
+        // One retry with more aggressive trimming
+        if (state?.game) {
+          if (Array.isArray(state.game.log)) state.game.log = state.game.log.slice(0, 80);
+          if (Array.isArray(state.game.activeDispatches)) state.game.activeDispatches = state.game.activeDispatches.slice(0, 10);
+        }
+        if (state?.history && Array.isArray(state.history)) state.history = state.history.slice(0, 20);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        return true;
+      } catch (e2) {
+        console.warn("saveState failed (storage quota or blocked). Continuing without persisting.", e2);
+        return false;
+      }
+    }
   }
 
   // -------------------------
@@ -2613,8 +2663,12 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
   }
 
   function hapticRoll() {
-      if (navigator && typeof navigator.vibrate === 'function') {
-      navigator.vibrate([25, 15, 25]);
+    try {
+      if (navigator && typeof navigator.vibrate === "function") {
+        navigator.vibrate([25, 15, 25]);
+      }
+    } catch (_) {
+      // no-op
     }
   }
 
