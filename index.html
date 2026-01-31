@@ -28,10 +28,14 @@
   </div>
 </div>
 
-
     <div class="brand">
-      <div class="brand-title">Police Precinct: Dispatcher</div>
-      <div class="brand-subtitle">Companion App</div>
+<button id="homeBadgeBtn" type="button" class="brand-home" aria-label="Go to Home">
+  <img src="badge.png" width="40" alt="Police Precinct Home" />
+</button>
+
+
+      <div class="brand-title"><!--Police Precinct: Dispatcher--></div>
+      <div class="brand-subtitle"><!--Companion App--></div>
     </div>
 
     <div class="header-actions">
@@ -45,18 +49,50 @@
 
   <main class="app-main">
     <!-- HOME VIEW -->
-    <section id="viewHome" class="view">
+    <section id="viewHome" class="view" style="height:unset">
       <div class="panel">
-        <div class="panel-body">
+        <div class="panel-body" style="background:unset;border:unset;box-shadow:unset">
+
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 50px">
+<div style="flex-shrink: 0; width:60px">
+  <img src="badge.png" style="width: 60px;">
+</div>
+
+<div class="hero" style="flex-grow: 1;text-align:center">
+            <div class="hero-title" style="text-align: center;">POLICE PRECINCT</div>
+            <div class="hero-text" style="text-align: center;font-weight: bold;">DISPATCHER</div>
+</div>
+<!--
           <div class="hero">
             <div class="hero-title">Dispatcher Console</div>
             <div class="hero-text">
               Track team actions, radio dispatches, commendations, and timed crises.
             </div>
           </div>
+-->
+
+<div style="flex-shrink: 0; width:60px">
+  <img src="badge.png" style="width: 60px;">
+</div>
+</div>
 
           <div class="home-buttons">
-            <button class="btn primary" id="btnBeginShift">Begin Shift</button>
+
+<button id="btnBeginShift" class="pp-begin-btn" type="button" style="width:300px; height: 80px">
+  <span class="pp-begin-text">BEGIN SHIFT</span>
+</button>
+
+<!--
+<button class="pp-begin-btn continue-shift" type="button" style="width:300px; height: 80px">
+  <span class="pp-begin-text">CONTINUE SHIFT</span>
+</button>
+
+<button class="pp-begin-btn continue-shift" type="button" style="width:300px; height: 80px">
+  <span class="pp-begin-text continue-shift">SETTINGS</span>
+</button>
+-->
+
+            <!-- <button class="btn primary" id="btnBeginShift">Begin Shift</button> -->
             <button class="btn" id="btnSetup">Setup</button>
             <button class="btn" id="btnSettings">Settings</button>
           </div>
@@ -65,10 +101,11 @@
             <button class="btn subtle" id="btnHowTo">How to Use</button>
             <button class="btn subtle" id="btnClearData">Reset App Data</button>
           </div>
-
+<!--
           <div class="hint">
             Tip: The main game screen is designed to fit without scrolling on mobile.
           </div>
+-->
         </div>
       </div>
     </section>
@@ -93,7 +130,7 @@
 
       <!-- Active Dispatches strip -->
       <div id="activeDispatchStrip" class="dispatch-strip hidden">
-        <div class="dispatch-title">Active Dispatches</div>
+        <div class="dispatch-title"><!-- Active Dispatches --></div>
 
         <div class="dispatch-scroll-wrap">
           <div class="dispatch-fade left" id="dispatchFadeLeft"></div>
@@ -106,68 +143,155 @@
 
       <div class="grid-3">
         <!-- Investigation -->
-        <div class="card" data-cat="investigation">
+        <div class="card card-investigation" data-cat="investigation">
           <div class="card-header">
-            <div class="card-title">Investigation</div>
-            <div class="card-meta"><span class="mono" id="investigationPct">0%</span></div>
+            <div class="card-title">
+
+
+
+<div class="secLeft">
+                <div class="secIcon" aria-hidden="true">
+<svg style="margin: 4px 0 0 5px" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-6 h-6 text-investigation"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></div>
+                <div class="mono" style="min-width:0;">
+                  <div class="secTitle">INVESTIGATION</div>
+                </div>
+              </div>
+
+
+
+<!--
+<div class="secIcon" aria-hidden="true">
+<svg style="margin: 4px 0 0 5px" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-6 h-6 text-investigation"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></div>
+Investigation
+
+--></div>
+
+            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="investigation" aria-label="Investigation help">
+              Draw Cards to find clues
+            </button>
+            <div class="card-meta">
+              <span class="mono pct-debug" id="investigationPct">0%</span>
+              <span class="led" id="investigationLed" title="Investigation success rate"></span>
+            </div>
           </div>
 
           <div class="card-body">
             <div class="btn-row">
-              <button class="btn success" data-action="success" data-cat="investigation">SUCCESS</button>
+              <button class="btn success segmented" data-action="success" data-cat="investigation" aria-label="Investigation success (clues found)">
+                <span class="seg" data-amount="1">1</span>
+                <span class="seg" data-amount="2">2+</span>
+              </button>
               <button class="btn danger" data-action="fail" data-cat="investigation">FAIL</button>
             </div>
 
-            <div class="counts">
+            <div class="counts counts-hidden">
               <div>✅ <span class="mono" id="investigationSuccess">0</span></div>
               <div>❌ <span class="mono" id="investigationFail">0</span></div>
+              <div>🔎 <span class="mono" id="investigationPoints">0</span></div>
             </div>
 
             <div class="progress-wrap" id="investigationCommWrap">
               <div class="progress-label">
                 Commendation: <span class="mono" id="investigationCommText">0/3</span>
               </div>
-              <div class="progress">
-                <div class="bar" id="investigationCommBar" style="width:0%"></div>
-              </div>
+
+<div class="container">
+  <div class="expanding">
+    <div class="progress">
+      <div class="bar" id="investigationCommBar" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="fixed-width">🏅</div>
+</div>
+
             </div>
           </div>
         </div>
 
         <!-- Arrest -->
-        <div class="card" data-cat="arrest">
+        <div class="card card-arrest" data-cat="arrest">
           <div class="card-header">
-            <div class="card-title">Arrest</div>
-            <div class="card-meta"><span class="mono" id="arrestPct">0%</span></div>
+
+
+<div class="secLeft">
+                <div class="secIcon" aria-hidden="true">
+<svg style="margin: 5px 0 0 5px" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link w-6 h-6 text-arrest"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></div>
+                <div class="mono" style="min-width:0;">
+                  <div class="secTitle">ARREST</div>
+                </div>
+              </div>
+
+
+
+<!--
+            <div class="card-title">🔗 Arrest</div>
+-->
+
+            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="arrest" aria-label="Arrest help">
+              Roll Dice to remove punks
+            </button>
+            <div class="card-meta">
+              <span class="mono pct-debug" id="arrestPct">0%</span>
+              <span class="led" id="arrestLed" title="Arrest success rate"></span>
+            </div>
           </div>
 
           <div class="card-body">
             <div class="btn-row">
-              <button class="btn success" data-action="success" data-cat="arrest">SUCCESS</button>
+              <button class="btn success segmented" data-action="success" data-cat="arrest" aria-label="Arrest success (thugs removed)">
+                <span class="seg" data-amount="1">1</span>
+                <span class="seg" data-amount="2">2</span>
+                <span class="seg" data-amount="3">3+</span>
+              </button>
               <button class="btn danger" data-action="fail" data-cat="arrest">FAIL</button>
             </div>
 
-            <div class="counts">
+            <div class="counts counts-hidden">
               <div>✅ <span class="mono" id="arrestSuccess">0</span></div>
               <div>❌ <span class="mono" id="arrestFail">0</span></div>
+              <div>👮 <span class="mono" id="arrestPoints">0</span></div>
             </div>
 
             <div class="progress-wrap" id="arrestCommWrap">
               <div class="progress-label">
                 Commendation: <span class="mono" id="arrestCommText">0/4</span>
               </div>
-              <div class="progress">
-                <div class="bar" id="arrestCommBar" style="width:0%"></div>
-              </div>
+
+<div class="container">
+  <div class="expanding">
+    <div class="progress">
+      <div class="bar" id="arrestCommBar" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="fixed-width">🏅</div>
+</div>
+
             </div>
           </div>
         </div>
 
         <!-- Emergency -->
-        <div class="card" data-cat="emergency">
+        <div class="card card-emergency" data-cat="emergency">
           <div class="card-header">
-            <div class="card-title">Emergency</div>
-            <div class="card-meta"><span class="mono" id="emergencyPct">0%</span></div>
+
+<div class="secLeft">
+                <div class="secIcon" aria-hidden="true">
+<svg style="margin: 2px 0 0 5px" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-siren w-6 h-6 text-emergency"><path d="M7 18v-6a5 5 0 1 1 10 0v6"></path><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"></path></svg></div>
+                <div class="mono" style="min-width:0;">
+                  <div class="secTitle">EMERGENCY</div>
+                </div>
+              </div>
+
+<!--
+            <div class="card-title">🚨 Emergency</div>
+-->
+            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="emergency" aria-label="Emergency help">
+              Roll Dice to handle emergency
+            </button>
+            <div class="card-meta">
+              <span class="mono pct-debug" id="emergencyPct">0%</span>
+              <span class="led" id="emergencyLed" title="Emergency success rate"></span>
+            </div>
           </div>
 
           <div class="card-body">
@@ -176,7 +300,7 @@
               <button class="btn danger" data-action="fail" data-cat="emergency">FAIL</button>
             </div>
 
-            <div class="counts">
+            <div class="counts counts-hidden">
               <div>✅ <span class="mono" id="emergencySuccess">0</span></div>
               <div>❌ <span class="mono" id="emergencyFail">0</span></div>
             </div>
@@ -185,10 +309,17 @@
               <div class="progress-label">
                 Commendation: <span class="mono" id="emergencyCommText">0/5</span>
               </div>
-              <div class="progress">
-                <div class="bar" id="emergencyCommBar" style="width:0%"></div>
-              </div>
-            </div>
+
+<div class="container">
+  <div class="expanding">
+    <div class="progress">
+      <div class="bar" id="emergencyCommBar" style="width:0%"></div>
+    </div>
+  </div>
+<div class="fixed-width">🏅</div>
+</div>
+
+            
           </div>
         </div>
       </div>

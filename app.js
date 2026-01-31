@@ -86,6 +86,9 @@
 
   const btnInstallApp = $("#btnInstallApp");
 
+  // Header home badge (top-left)
+  const homeBadgeBtn = $("#homeBadgeBtn");
+
   const overallPct = $("#overallPct");
   const overallActions = $("#overallActions");
 
@@ -167,16 +170,22 @@
     }
   }
 
-  function showHome() {
-    setActiveView(viewHome);
-    const active = !!state.game?.active;
-    btnBeginShift.textContent = active ? "Continue Shift" : "Begin Shift";
-  }
+function showHome() {
+  setActiveView(viewHome);
+  setBeginShiftButton(!!state.game?.active);
+
+  // Don't show the "go home" badge when we're already on the home screen
+  homeBadgeBtn?.classList.add("hidden");
+}
+
 
   function showGame() {
     if (!state.game?.active) startNewGame();
     setActiveView(viewGame);
     renderGame();
+
+    // Show the home badge when in-game so users can jump back to the home screen
+    homeBadgeBtn?.classList.remove("hidden");
 
     // Start/ensure main audio when entering game (requires user gesture; this is called after Begin/Continue click)
     audio.setMode("main");
@@ -270,6 +279,13 @@
   // Global wiring
   // -------------------------
   function wireGlobal() {
+    // Header badge = quick nav back to home
+    homeBadgeBtn?.addEventListener("click", async () => {
+      // user gesture happened; safe to attempt audio start (for any UI sound)
+      await audio.userGestureKick();
+      location.hash = "#/home";
+    });
+
     btnBeginShift.addEventListener("click", async () => {
       // Route FIRST so a persistence failure can't abort navigation.
       // The game view will start a new shift if needed.
@@ -316,6 +332,14 @@
     btnHowTo.addEventListener("click", async () => {
       await audio.userGestureKick();
       openHowToModal();
+    });
+
+    // Action headers (center instruction text)
+    document.querySelectorAll(".card-instructions").forEach((el) => {
+      el.addEventListener("click", async () => {
+        await audio.userGestureKick();
+        openActionHelp(el.dataset.cat);
+      });
     });
 
     activeDispatchList.addEventListener("scroll", updateDispatchFades);
@@ -408,7 +432,27 @@
       if (cat === "arrest") audio.playUi(action === "success" ? AUDIO_FILES.arrestSuccess : AUDIO_FILES.arrestFail);
       if (cat === "emergency") audio.playUi(action === "success" ? AUDIO_FILES.emergencySuccess : AUDIO_FILES.emergencyFail);
 
-      recordAction(cat, action);
+      // For segmented SUCCESS buttons, capture the "how many" value that was clicked.
+      // - Investigation: clue cards drawn (1 | 2 | 3+)
+      // - Arrest: thugs removed (1 | 2 | 3+)
+      let amount = 1;
+      if (action === "success" && (cat === "investigation" || cat === "arrest")) {
+        const seg = e.target.closest(".seg");
+        const raw = seg?.getAttribute("data-amount");
+        const parsed = raw ? parseInt(raw, 10) : NaN;
+        if (Number.isFinite(parsed) && parsed > 0) {
+          amount = parsed;
+        } else {
+          // Fallback: split the button into thirds based on click position.
+          const rect = btn.getBoundingClientRect();
+          const x = (e.clientX || 0) - rect.left;
+          const w = Math.max(1, rect.width);
+          const third = w / 3;
+          amount = x < third ? 1 : (x < 2 * third ? 2 : 3);
+        }
+      }
+
+      recordAction(cat, action, amount);
     });
   }
 
@@ -453,14 +497,16 @@
     };
 
     function mkCat() {
-      return { success: 0, fail: 0, commProgress: 0 };
+      // success/fail track button presses (used for success rates)
+      // points track the "how many" value for segmented successes (clues, thugs, etc.)
+      return { success: 0, fail: 0, commProgress: 0, points: 0 };
     }
   }
 
   // -------------------------
   // Core game logic
   // -------------------------
-  function recordAction(cat, action) {
+  function recordAction(cat, action, amount = 1) {
     const g = state.game;
     g.clickCount += 1;
 
@@ -468,14 +514,25 @@
     if (action === "success") c.success += 1;
     else c.fail += 1;
 
-    g.log.unshift({ t: Date.now(), type: "action", cat, result: action });
+    // Segmented success: Investigation = clues found; Arrest = thugs removed
+    const isSegmented = (action === "success") && (cat === "investigation" || cat === "arrest");
+    if (isSegmented) {
+      const pts = clampInt(amount, 1, 3);
+      c.points += pts;
+      g.log.unshift({ t: Date.now(), type: "action", cat, result: action, amount: pts });
+    } else {
+      g.log.unshift({ t: Date.now(), type: "action", cat, result: action });
+    }
 
     // Commendations
     if (state.settings.features.commendations && action === "success") {
-      c.commProgress += 1;
+      // Investigation/Arrest progress is based on points; Emergency remains 1-per-success.
+      const inc = (cat === "investigation" || cat === "arrest") ? clampInt(amount, 1, 3) : 1;
+      c.commProgress += inc;
       const thresh = COMM_THRESHOLDS[cat];
-      if (c.commProgress >= thresh) {
-        c.commProgress = 0;
+      // If a segmented click pushes us past the threshold, carry the remainder.
+      while (c.commProgress >= thresh) {
+        c.commProgress -= thresh;
         g.commendations[cat] += 1;
 
         const comm = pickCommendation(cat);
@@ -498,6 +555,22 @@
           modalType: "commendation"
         });
       }
+    }
+
+    // Arrest 3+ reminder: +1 donut
+    if (action === "success" && cat === "arrest" && clampInt(amount, 1, 3) >= 3) {
+      g.log.unshift({ t: Date.now(), type: "reminder", cat, text: "+1 Donut (3+ thugs arrested)" });
+      openInfoModal({
+        title: "Bonus Donut",
+        modalType: "reminder",
+        bodyHtml: `
+          <div class="item">
+            <div class="item-title">Arrest (3+)</div>
+            <div class="item-text">Remember: you earn <b>+1 Donut</b> for removing 3+ thugs.</div>
+          </div>
+        `,
+        primaryText: "Got it"
+      });
     }
 
     if (state.settings.features.dispatches) maybeDispatch(cat);
@@ -542,7 +615,21 @@
     g.log.unshift({ t: Date.now(), type: "dispatch", cat, helpful, text: dispatch.text });
 
     audio.playUi(AUDIO_FILES.dispatch);
+    dispatchStripAlert();
     openDispatchModal(dispatch);
+  }
+
+  // Briefly "flicker" the active dispatch strip like a radio/terminal getting new traffic.
+  function dispatchStripAlert() {
+    try {
+      if (!activeDispatchStrip) return;
+      // restart animation if it was already running
+      activeDispatchStrip.classList.remove("is-alerting");
+      // force reflow to allow re-adding the class to retrigger the keyframes
+      void activeDispatchStrip.offsetWidth;
+      activeDispatchStrip.classList.add("is-alerting");
+      window.setTimeout(() => activeDispatchStrip.classList.remove("is-alerting"), 650);
+    } catch (_) {}
   }
 
   function dispatchProbability(rate) {
@@ -601,7 +688,19 @@
       const c = g.categories[cat];
       $(`#${cat}Success`).textContent = c.success;
       $(`#${cat}Fail`).textContent = c.fail;
-      $(`#${cat}Pct`).textContent = fmtPct(getSuccessRate(cat));
+      const rate = getSuccessRate(cat);
+      $(`#${cat}Pct`).textContent = fmtPct(rate);
+
+      const led = document.getElementById(`${cat}Led`);
+      if (led) {
+        led.classList.remove("red","redorange","orange","yelloworange","yellow","yellowgreen","green","bluegreen","blue");
+        led.classList.add(ledClassForRate(rate));
+        led.title = `${fmtPct(rate)} success rate`;
+      }
+
+      // Optional "points" readouts for segmented categories
+      const ptsEl = document.getElementById(`${cat}Points`);
+      if (ptsEl) ptsEl.textContent = String(c.points || 0);
     });
 
     overallPct.textContent = fmtPct(getOverallRate());
@@ -624,10 +723,40 @@
     if (state.settings.features.dispatches && ds.length > 0) {
       activeDispatchStrip.classList.remove("hidden");
       activeDispatchList.innerHTML = "";
+
+      const catCode = (c) => {
+        switch (c) {
+          case "investigation": return "INV";
+          case "arrest": return "ARR";
+          case "emergency": return "EMG";
+          default: return String(c || "").slice(0, 3).toUpperCase();
+        }
+      };
+
       ds.slice(0, 6).forEach(d => {
-        const el = document.createElement("div");
-        el.className = "tag";
-        el.textContent = `${cap(d.cat)}: ${d.short}`;
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "dispatch-chip";
+        el.classList.add(`cat-${d.cat || "unknown"}`);
+        el.classList.add(d.helpful ? "is-helpful" : "is-hurtful");
+        el.setAttribute("aria-label", `${cap(d.cat)} dispatch: ${d.short}`);
+
+        // Build structured content for a more "dispatcher terminal" feel.
+        const dot = document.createElement("span");
+        dot.className = "dc-dot";
+
+        const code = document.createElement("span");
+        code.className = "dc-code";
+        code.textContent = catCode(d.cat);
+
+        const text = document.createElement("span");
+        text.className = "dc-text";
+        text.textContent = d.short;
+
+        el.appendChild(dot);
+        el.appendChild(code);
+        el.appendChild(text);
+
         el.addEventListener("click", () => openDispatchModal(d, true));
         activeDispatchList.appendChild(el);
       });
@@ -1377,6 +1506,7 @@ function openStartingPlayerSelector() {
       title: "Settings",
       modalType: "settings",
       bodyHtml: `
+<!--
         <div class="item">
           <div class="item-title">Audio</div>
           <div class="row">
@@ -1407,7 +1537,7 @@ function openStartingPlayerSelector() {
             </div>
           </div>
         </div>
-
+-->
         <div class="item">
           <div class="item-title">Haptics</div>
           <div class="row">
@@ -1537,6 +1667,64 @@ function openStartingPlayerSelector() {
     });
   }
 
+  function openActionHelp(cat) {
+    const k = String(cat || "").toLowerCase();
+    const title = k === "investigation" ? "Investigation" : k === "arrest" ? "Arrest" : "Emergency";
+    const bodyHtml = (() => {
+      if (k === "investigation") {
+        return `
+          <div class="item">
+            <div class="item-title">Draw to find clues</div>
+            <div class="item-text">
+              When the table resolves an <b>Investigation</b> action, mark <b>SUCCESS</b> or <b>FAIL</b>.
+            </div>
+          </div>
+          <div class="item">
+            <div class="item-title">If SUCCESS…</div>
+            <div class="item-text">Tap <b>1 / 2 / 3+</b> to log how many clues were found.</div>
+          </div>
+          <div class="item">
+            <div class="item-title">If FAIL…</div>
+            <div class="item-text">Tap <b>FAIL</b> to log it and keep the pressure on your success rate.</div>
+          </div>
+        `;
+      }
+      if (k === "arrest") {
+        return `
+          <div class="item">
+            <div class="item-title">Roll to remove punks</div>
+            <div class="item-text">
+              When the table resolves an <b>Arrest</b> action, mark <b>SUCCESS</b> or <b>FAIL</b>.
+            </div>
+          </div>
+          <div class="item">
+            <div class="item-title">If SUCCESS…</div>
+            <div class="item-text">Tap <b>1 / 2 / 3+</b> to log how many punks were removed.</div>
+          </div>
+          <div class="item">
+            <div class="item-title">If FAIL…</div>
+            <div class="item-text">Tap <b>FAIL</b> to log it.</div>
+          </div>
+        `;
+      }
+      return `
+        <div class="item">
+          <div class="item-title">Roll to handle emergencies</div>
+          <div class="item-text">
+            When the table resolves an <b>Emergency</b> action, tap <b>SUCCESS</b> or <b>FAIL</b>.
+          </div>
+        </div>
+      `;
+    })();
+
+    openModal({
+      title,
+      modalType: "info",
+      bodyHtml,
+      footerButtons: [{ text: "Close", className: "btn primary", onClick: closeModal }]
+    });
+  }
+
   function openLogModal() {
     if (!state.game) return;
     const g = state.game;
@@ -1545,6 +1733,10 @@ function openStartingPlayerSelector() {
       const time = new Date(entry.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       if (entry.type === "action") {
         const icon = entry.result === "success" ? "✅" : "❌";
+        if (entry.result === "success" && (entry.cat === "investigation" || entry.cat === "arrest") && entry.amount) {
+          const label = entry.cat === "investigation" ? "Clues" : "Thugs";
+          return `<div class="item"><div class="item-title">${time} — ${icon} ${cap(entry.cat)}</div><div class="item-text">SUCCESS — <b>${label}: ${escapeHtml(String(entry.amount))}</b>.</div></div>`;
+        }
         return `<div class="item"><div class="item-title">${time} — ${icon} ${cap(entry.cat)}</div><div class="item-text">${cap(entry.cat)} marked as <b>${entry.result.toUpperCase()}</b>.</div></div>`;
       }
       if (entry.type === "commendation") {
@@ -1555,6 +1747,9 @@ function openStartingPlayerSelector() {
       }
       if (entry.type === "crisis") {
         return `<div class="item"><div class="item-title">${time} — ⏱ Crisis</div><div class="item-text">${escapeHtml(entry.text)} (${entry.status})</div></div>`;
+      }
+      if (entry.type === "reminder") {
+        return `<div class="item"><div class="item-title">${time} — 🍩 Reminder</div><div class="item-text">${escapeHtml(entry.text)}</div></div>`;
       }
       return "";
     }).join("");
@@ -2303,6 +2498,14 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
   // -------------------------
   // Helpers
   // -------------------------
+
+function setBeginShiftButton(isActive) {
+  const textEl = btnBeginShift.querySelector(".pp-begin-text");
+  if (textEl) textEl.textContent = isActive ? "CONTINUE SHIFT" : "BEGIN SHIFT";
+  btnBeginShift.classList.toggle("continue-shift", !!isActive);
+}
+
+
   function pickDispatch(category, polarity) {
     const list = (CONTENT.dispatches || []).filter(d =>
         d.category === category && d.polarity === polarity
@@ -2907,6 +3110,19 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
   }
   function cap(s) { return (s || "").slice(0,1).toUpperCase() + (s || "").slice(1); }
   function fmtPct(x) { return `${Math.round((x || 0) * 100)}%`; }
+
+  function ledClassForRate(r) {
+    const pct = Math.round((r || 0) * 100);
+    if (pct < 15) return "red";
+    if (pct < 25) return "redorange";
+    if (pct < 35) return "orange";
+    if (pct < 45) return "yelloworange";
+    if (pct < 55) return "yellow";
+    if (pct < 65) return "yellowgreen";
+    if (pct < 75) return "green";
+    if (pct < 85) return "bluegreen";
+    return "blue";
+  }
   function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
   function uid() { return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16); }

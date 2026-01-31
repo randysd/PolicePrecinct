@@ -17,7 +17,9 @@
   --shadow: 0 10px 30px rgba(0,0,0,.35);
 }
 
-*{ box-sizing:border-box; }
+*{ 
+   /* box-sizing:border-box; */
+}
 html,body{ height:100%; }
 body{
   margin:0;
@@ -25,6 +27,9 @@ body{
   background: radial-gradient(1200px 800px at 40% 0%, #15213a 0%, var(--bg) 55%, #070b12 100%);
   color:var(--text);
   overflow:hidden; /* keep main screens non-scrolling */
+  background-image: url('background3.png');
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 
 /* Update banner */
@@ -113,9 +118,9 @@ body{
 }
 
 .hero-title{
-  font-size: 22px;
+  font-size: 32px;
   font-weight: 800;
-  margin-bottom: 6px;
+  /* margin-bottom: 6px; */
 }
 .hero-text{
   color: var(--muted);
@@ -125,7 +130,8 @@ body{
 
 .home-buttons{
   display:grid;
-  grid-template-columns: 1fr;
+justify-content: center;
+  /* grid-template-columns: 1fr; */
   gap: 10px;
 }
 .home-secondary{
@@ -156,11 +162,11 @@ body{
   border-color: rgba(74,163,255,.35);
 }
 .btn.success{
-  background: linear-gradient(180deg, rgba(38,208,124,.22), rgba(38,208,124,.08));
+  background: linear-gradient(180deg, rgba(18,108,14,.92), rgba(18,58,14,.98));
   border-color: rgba(38,208,124,.35);
 }
 .btn.danger{
-  background: linear-gradient(180deg, rgba(255,91,110,.22), rgba(255,91,110,.08));
+  background: linear-gradient(180deg, rgba(155,11,10,.92), rgba(55,11,10,.98));
   border-color: rgba(255,91,110,.35);
 }
 .btn.warn{
@@ -176,6 +182,28 @@ body{
   font-weight: 650;
 }
 .btn:active{ transform: translateY(1px); }
+
+/* Segmented success buttons (1 | 2 | 3+) */
+.btn.segmented{
+  display:flex;
+  align-items:stretch;
+  padding: 0;
+  overflow:hidden;
+}
+.btn.segmented .seg{
+  flex: 1 1 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 12px 10px;
+  user-select:none;
+}
+.btn.segmented .seg + .seg{
+  border-left: 1px solid rgba(255,255,255,.12);
+}
+.btn.segmented .seg:active{
+  filter: brightness(1.05);
+}
 
 .muted{ color: var(--muted); }
 .tiny{ font-size: 12px; }
@@ -226,8 +254,8 @@ body{
   min-height: 0;
 }
 .card-header{
-  display:flex;
-  justify-content:space-between;
+  display:grid;
+  grid-template-columns: auto 1fr auto;
   align-items:center;
   margin-bottom: 10px;
   padding-bottom: 10px;
@@ -240,7 +268,57 @@ body{
 .card-meta{
   color: var(--muted);
   font-size: 13px;
+  display:flex;
+  align-items:center;
+  gap: 8px;
 }
+
+.card-instructions{
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.1;
+}
+.card-instructions:hover{
+  background: rgba(255,255,255,.06);
+  color: #dfe7f8;
+}
+.card-instructions:active{
+  transform: translateY(1px);
+}
+
+.card-investigation{
+  background: linear-gradient(180deg, rgba(255,255,0,.35), rgba(255,255,255,.02));
+}
+.card-arrest{
+  background: linear-gradient(180deg, rgba(0,0,255,.2), rgba(255,255,255,.02));
+}
+.card-emergency{
+  background: linear-gradient(180deg, rgba(255,0,0,.25), rgba(255,255,255,.02));
+}
+
+.led{
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.12);
+  box-shadow: 0 0 10px rgba(255,255,255,.08);
+}
+.led.red{ background: rgba(255, 60, 60, .85); box-shadow: 0 0 10px rgba(255, 60, 60, .80); }
+.led.redorange{ background: rgba(255, 95, 45, .85); box-shadow: 0 0 10px rgba(255, 95, 45, .80); }
+.led.orange{ background: rgba(255, 140, 0, .85); box-shadow: 0 0 10px rgba(255, 140, 0, .80); }
+.led.yelloworange{ background: rgba(255, 190, 0, .85); box-shadow: 0 0 10px rgba(255, 190, 0, .80); }
+.led.yellow{ background: rgba(255, 230, 0, .85); box-shadow: 0 0 10px rgba(255, 230, 0, .80); }
+.led.yellowgreen{ background: rgba(170, 255, 0, .85); box-shadow: 0 0 10px rgba(170, 255, 0, .80); }
+.led.green{ background: rgba(0, 210, 110, .85); box-shadow: 0 0 10px rgba(0, 210, 110, .80); }
+.led.bluegreen{ background: rgba(0, 210, 180, .85); box-shadow: 0 0 10px rgba(0, 210, 180, .80); }
+.led.blue{ background: rgba(60, 160, 255, .9); box-shadow: 0 0 10px rgba(60, 160, 255, .80); }
 .card-body{
   display:flex;
   flex-direction:column;
@@ -264,7 +342,7 @@ body{
 .progress-wrap{
   margin-top:auto;
   padding-top: 10px;
-  border-top:1px solid var(--line);
+  / * border-top:1px solid var(--line); */
 }
 .progress-label{
   display:flex;
@@ -561,16 +639,99 @@ hr.sep{
   height: 28px;
 }
 
+/* --------------------------------------------------
+   Active Dispatches strip (thematic "dispatcher CRT")
+   -------------------------------------------------- */
 .dispatch-strip{
+  --crt-bg: #071008;
+  --crt-ink: #9bff9b;
+  --crt-ink-dim: rgba(155,255,155,.72);
+  --crt-line: rgba(155,255,155,.22);
+
   display:flex;
   align-items:center;
   gap:10px;
+
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(155,255,155,.20);
+  background:
+    radial-gradient(120% 140% at 30% 0%, rgba(155,255,155,.08), transparent 60%),
+    linear-gradient(180deg, rgba(0,0,0,.25), transparent 40%),
+    var(--crt-bg);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.55),
+    inset 0 12px 30px rgba(0,0,0,.50),
+    0 10px 30px rgba(0,0,0,.25);
+  position: relative;
+  overflow: hidden;
+}
+
+/* scanlines + slight noise */
+.dispatch-strip::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,.0) 0px,
+      rgba(0,0,0,.0) 2px,
+      rgba(0,0,0,.16) 3px
+    );
+  opacity: .45;
+  pointer-events:none;
+}
+
+.dispatch-strip::after{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(140% 100% at 50% 0%, transparent 30%, rgba(0,0,0,.32) 80%),
+    radial-gradient(110% 110% at 50% 50%, transparent 55%, rgba(0,0,0,.35) 100%);
+  opacity: .75;
+  pointer-events:none;
 }
 
 .dispatch-title{
   flex:0 0 auto;
-  font-weight:600;
-  opacity:0.9;
+  font-weight: 800;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--crt-ink-dim);
+  text-shadow: 0 0 10px rgba(155,255,155,.18);
+  position: relative;
+  z-index: 1;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.dispatch-title::before{
+  content:"CH-1";
+  font-weight: 900;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--crt-line);
+  color: var(--crt-ink);
+  background: rgba(155,255,155,.06);
+}
+
+.dispatch-title::after{
+  content:"●";
+  font-size: 10px;
+  color: var(--crt-ink);
+  text-shadow: 0 0 12px rgba(155,255,155,.40);
+  animation: dcPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes dcPulse{
+  0%, 100% { opacity: .35; }
+  50% { opacity: 1; }
 }
 
 /* Wrap creates a clipping container */
@@ -578,6 +739,48 @@ hr.sep{
   position:relative;
   flex:1 1 auto;
   min-width: 0; /* important for flex overflow behavior */
+}
+
+/* subtle ticker sweep across the dispatch window */
+.dispatch-scroll-wrap::before{
+  content:"";
+  position:absolute;
+  inset:-10px -36px;
+  z-index: 0;
+  pointer-events:none;
+  opacity: .22;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(155,255,155,.00) 30%,
+    rgba(155,255,155,.20) 44%,
+    rgba(155,255,155,.38) 50%,
+    rgba(155,255,155,.20) 56%,
+    rgba(155,255,155,.00) 70%,
+    transparent 100%
+  );
+  transform: translateX(-140%);
+  animation: dcSweep 6.5s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes dcSweep{
+  0%   { transform: translateX(-140%); }
+  100% { transform: translateX(140%); }
+}
+
+/* momentary alert flicker when a new dispatch arrives */
+.dispatch-strip.is-alerting{
+  animation: dcFlicker 520ms ease-out;
+}
+
+@keyframes dcFlicker{
+  0%   { filter: brightness(1) contrast(1); }
+  12%  { filter: brightness(1.25) contrast(1.18); }
+  22%  { filter: brightness(.92) contrast(1.10); }
+  36%  { filter: brightness(1.35) contrast(1.25); }
+  52%  { filter: brightness(1.05) contrast(1.08); }
+  100% { filter: brightness(1) contrast(1); }
 }
 
 /* The scroll area */
@@ -591,6 +794,9 @@ hr.sep{
   scroll-behavior:smooth;
   -webkit-overflow-scrolling: touch;
 }
+
+/* keep sweep underneath chips */
+.dispatch-scroll{ position: relative; z-index: 1; }
 
 /* Prevent wrapping */
 .dispatch-scroll .tag{
@@ -615,12 +821,83 @@ hr.sep{
 
 .dispatch-fade.left{
   left:0;
-  background: linear-gradient(to right, rgba(6,11,20,0.95), rgba(6,11,20,0));
+  background: linear-gradient(to right, rgba(7,16,8,0.95), rgba(7,16,8,0));
 }
 .dispatch-fade.right{
   right:0;
-  background: linear-gradient(to left, rgba(6,11,20,0.95), rgba(6,11,20,0));
+  background: linear-gradient(to left, rgba(7,16,8,0.95), rgba(7,16,8,0));
 }
+
+/* dispatch chips inside the scroll strip */
+.dispatch-scroll{ position: relative; z-index: 1; }
+
+.dispatch-chip{
+  flex: 0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+
+  border-radius: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(155,255,155,.22);
+  background: rgba(0,0,0,.22);
+  color: rgba(155,255,155,.88);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  letter-spacing: .02em;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 90ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.dispatch-chip:hover{
+  transform: translateY(-1px);
+  border-color: rgba(155,255,155,.35);
+  background: rgba(155,255,155,.06);
+  box-shadow: 0 0 0 3px rgba(155,255,155,.05);
+}
+
+.dispatch-chip:active{
+  transform: translateY(0px);
+}
+
+.dispatch-chip:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(155,255,155,.12);
+}
+
+.dispatch-chip .dc-dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(155,255,155,.60);
+  box-shadow: 0 0 14px rgba(155,255,155,.35);
+  flex: 0 0 auto;
+}
+
+.dispatch-chip .dc-code{
+  font-weight: 900;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(155,255,155,.18);
+  color: rgba(155,255,155,.92);
+  background: rgba(155,255,155,.04);
+}
+
+.dispatch-chip .dc-text{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+}
+
+/* helpful vs hurtful (still keeps the overall green terminal vibe) */
+.dispatch-chip.is-helpful{ border-color: rgba(112,255,168,.28); }
+.dispatch-chip.is-helpful .dc-dot{ background: rgba(112,255,168,.70); box-shadow: 0 0 14px rgba(112,255,168,.35); }
+
+.dispatch-chip.is-hurtful{ border-color: rgba(255,196,96,.30); }
+.dispatch-chip.is-hurtful .dc-dot{ background: rgba(255,196,96,.75); box-shadow: 0 0 14px rgba(255,196,96,.35); }
 
 /* visible state */
 .dispatch-fade.on{ opacity:1; }
@@ -914,5 +1191,721 @@ hr.sep{
   75%{ transform: rotate(270deg) translateY(2px); filter: blur(0.4px); }
   100%{ transform: rotate(360deg) translateY(0); filter: blur(0px); }
 }
+
+* {
+  -webkit-touch-callout: none;
+  /* -webkit-user-select: none; */
+  /* user-select: none; */
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Subtle press feedback */
+button, [role="button"], .btn {
+  transition: transform 80ms ease, filter 80ms ease;
+  transform: translateZ(0); /* helps prevent jitter on some mobile GPUs */
+}
+
+button:active, [role="button"]:active, .btn:active {
+  transform: scale(0.98);
+}
+
+.container {
+  display: flex; /* Enables flexbox layout */
+  width: 100%;   /* Ensures the container spans its parent's width */
+}
+
+.fixed-width {
+  margin-top: -6px;
+  width: 25px;   /* Sets a specific, fixed width */
+}
+
+.expanding {
+  flex-grow: 1;   /* This div grows to fill all available space */
+}
+
+    .secIcon{
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      position: relative;
+      overflow:hidden;
+
+background: rgba(245,182,60,.16); border-color: rgba(245,182,60,.20);
+    }
+    .secIcon:after{
+      content:"";
+      position:absolute;
+      inset:-20px;
+      background: radial-gradient(closest-side, rgba(255,255,255,.22), transparent 60%);
+      transform: translate(8px, 6px);
+    }
+
+
+
+
+.secHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .secLeft{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      min-width:0;
+    }
+
+.secIcon{
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      position: relative;
+      overflow:hidden;
+    }
+
+
+    .secIcon:after{
+      content:"";
+      position:absolute;
+      inset:-20px;
+      background: radial-gradient(closest-side, rgba(255,255,255,.22), transparent 60%);
+      transform: translate(8px, 6px);
+    }
+
+    .secTitle{
+      font-weight: 900;
+      letter-spacing: 1px;
+      font-size: 1.15rem;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .secMeta{
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: .85rem;
+      white-space:nowrap;
+    }
+
+.card-investigation .secIcon {
+    background: rgba(245, 182, 60, .16);
+    border-color: rgba(245, 182, 60, .20);
+}
+.card-arrest .secIcon {
+    background: rgba(42, 163, 255, .16);
+    border-color: rgba(42, 163, 255, .20);
+}
+.card-emergency .secIcon {
+    background: rgba(255, 57, 74, .16);
+    border-color: rgba(255, 57, 74, .20);
+}
+
+
+/* Good accessibility: show ring only when it matters (keyboard nav) */
+:focus-visible {
+  outline: 2px solid rgba(255,255,255,.6);
+  outline-offset: 2px;
+}
+
+/* Optional: remove noisy outlines for mouse focus */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Prevent Chrome's dashed focus ring on the dispatch scroller */
+.dispatch-scroll:focus,
+.dispatch-scroll:focus-visible {
+  outline: none;
+}
+
+/* Optional: if you still want a nice keyboard-only focus affordance */
+.dispatch-scroll:focus-visible {
+  box-shadow: 0 0 0 3px rgba(155,255,155,.12);
+  border-radius: 10px;
+}
+
+.pct-debug{ display:none; }
+
+.counts-hidden{ display:none; }
+
+.progress-label { display: none; }
+
+
+
+
+
+
+/* BUTTONS */
+.pp-begin-btn {
+margin-bottom: 30px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  /* width: min(820px, 92vw); */
+  width: 300px !important;
+  height: 78px !important;
+
+  border: 0;
+  border-radius: 0px;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+
+  overflow: visible; /* allow outer glow */
+}
+
+/* REAL glow layer (reliable pulse) */
+.pp-glow{
+  position: absolute;
+  inset: -14px;
+  border-radius: 14px;
+  background:
+    radial-gradient(60% 120% at 50% 50%,
+      rgba(255, 40, 40, .28) 0%,
+      rgba(255, 40, 40, .14) 35%,
+      rgba(255, 40, 40, 0) 70%);
+  filter: blur(6px);
+  opacity: .6;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== Inner surface ===== */
+.pp-begin-btn::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: 0px;
+
+  /* Dark red “panel” like your reference */
+  background:
+    /* top center hot flare across the interior */
+    radial-gradient(120% 90% at 50% 0%,
+      rgba(255,255,255,.18) 0%,
+      rgba(255,255,255,.06) 22%,
+      rgba(0,0,0,0) 55%),
+
+    /* red inner illumination */
+    radial-gradient(140% 160% at 50% 45%,
+      rgba(255,30,30,.20) 0%,
+      rgba(255,0,0,.10) 35%,
+      rgba(0,0,0,0) 70%),
+
+    /* main dark panel */
+    linear-gradient(to bottom,
+      #2a0a0a 0%,
+      #120606 45%,
+      #080303 100%);
+
+  /* red inner rim + depth */
+  box-shadow:
+    inset 0 0 0 2px rgba(255,70,70,.50),
+    inset 0 0 24px rgba(255,40,40,.20),
+    inset 0 -14px 20px rgba(0,0,0,.70);
+
+  z-index: 1;
+}
+
+/* ===== Frame sheen (top hot center, bottom steel-ish center) ===== */
+.pp-begin-btn::after{
+  content:"";
+  position:absolute;
+  inset:-3px;
+  border-radius: 0px;
+  padding: 3px;
+
+  background:
+    /* TOP: bright center flare fading to red */
+    linear-gradient(to right,
+      rgba(255,60,60,.25) 0%,
+      rgba(255,150,150,.35) 20%,
+      rgba(255,255,255,.98) 50%,
+      rgba(255,150,150,.35) 80%,
+      rgba(255,60,60,.25) 100%) top / 100% 54% no-repeat,
+
+    /* BOTTOM: more neutral with bright center */
+    linear-gradient(to right,
+      rgba(190,190,190,.08) 0%,
+      rgba(220,220,220,.18) 30%,
+      rgba(255,255,255,.75) 50%,
+      rgba(220,220,220,.18) 70%,
+      rgba(190,190,190,.08) 100%) bottom / 100% 46% no-repeat,
+
+    /* overall red tint */
+    linear-gradient(to bottom,
+      rgba(255,40,40,.60),
+      rgba(255,40,40,.10) 55%,
+      rgba(255,255,255,.08));
+
+  /* mask so it becomes just a border ring */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+
+  box-shadow: 0 0 18px rgba(255,35,35,.35);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ===== Text ===== */
+.pp-begin-text{
+  position: relative;
+  z-index: 3;
+
+  font-family: "Orbitron", "Segoe UI", system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 2px;
+  font-size: clamp(22px, 3.2vw, 34px);
+
+  /* gold gradient (top sheen -> warmer bottom) */
+  background: linear-gradient(to bottom,
+    #fff4c6 0%,
+    #ffd86f 40%,
+    #ffb43c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  /* yellow glow + subtle red spill */
+  text-shadow:
+    0 0 10px rgba(255,220,130,.55),
+    0 0 16px rgba(255,170,60,.35),
+    0 0 14px rgba(255,40,40,.30);
+}
+
+
+/* =========================================================
+   Police Precinct "BEGIN SHIFT" button
+   - Default = red siren + gold text
+   - Add .continue-shift on the BUTTON to switch to blue glow
+     AND cyan/blue text (e.g. #60e2f3)
+   - Optional: add <span class="pp-glow"></span> inside button
+   ========================================================= */
+
+/* Base button */
+.pp-begin-btn{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+
+  overflow: visible;
+  border-radius: 0px;      /* you set this intentionally */
+  isolation: isolate;
+
+  /* ========= THEME VARIABLES (DEFAULT = RED + GOLD TEXT) ========= */
+  --glow1: rgba(255, 40, 40, .28);
+  --glow2: rgba(255, 40, 40, .14);
+
+  --rim:    rgba(255, 70, 70, .50);
+  --inner1: rgba(255, 30, 30, .20);
+  --inner2: rgba(255,  0,  0, .10);
+
+  --frameA: rgba(255, 60, 60, .25);
+  --frameB: rgba(255,150,150, .35);
+  --frameC: rgba(255, 40, 40, .60);
+  --frameD: rgba(255, 40, 40, .10);
+
+  --frameShadow: rgba(255, 35, 35, .35);
+
+  /* Text theme (default gold) */
+  --textTop: #fff4c6;
+  --textMid: #ffd86f;
+  --textBot: #ffb43c;
+
+  --textGlow1: rgba(255,220,130,.55);
+  --textGlow2: rgba(255,170, 60,.35);
+
+  --textSpill: rgba(255, 40, 40, .30);
+}
+
+/* BLUE variant (police light + CYAN TEXT) */
+.pp-begin-btn.continue-shift{
+  --glow1: rgba( 60,160,255, .28);
+  --glow2: rgba( 60,160,255, .14);
+
+  --rim:    rgba(110,190,255, .55);
+  --inner1: rgba( 60,160,255, .20);
+  --inner2: rgba( 20,110,255, .10);
+
+  --frameA: rgba( 60,160,255, .26);
+  --frameB: rgba(170,220,255, .38);
+  --frameC: rgba( 60,160,255, .60);
+  --frameD: rgba( 60,160,255, .12);
+
+  --frameShadow: rgba( 60,160,255, .35);
+
+  /* Cyan/blue label (your requested vibe) */
+  --textTop: #baf7ff;
+  --textMid: #60e2f3;   /* requested */
+  --textBot: #1bb7ff;
+
+  /* Cyan glows */
+  --textGlow1: rgba( 96,226,243,.55);
+  --textGlow2: rgba( 27,183,255,.35);
+
+  /* blue spill onto panel */
+  --textSpill: rgba( 60,160,255, .35);
+}
+
+/* Optional outer bloom element (place inside button) */
+.pp-begin-btn .pp-glow{
+  position: absolute;
+  inset: -14px;
+  border-radius: 14px;
+  background: radial-gradient(60% 120% at 50% 50%,
+    var(--glow1) 0%,
+    var(--glow2) 35%,
+    rgba(0,0,0,0) 70%);
+  filter: blur(6px);
+  opacity: .6;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== Inner surface (panel) ===== */
+.pp-begin-btn::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: 0px;
+
+  background:
+    radial-gradient(120% 90% at 50% 0%,
+      rgba(255,255,255,.18) 0%,
+      rgba(255,255,255,.06) 22%,
+      rgba(0,0,0,0) 55%),
+
+    radial-gradient(140% 160% at 50% 45%,
+      var(--inner1) 0%,
+      var(--inner2) 35%,
+      rgba(0,0,0,0) 70%),
+
+    linear-gradient(to bottom,
+      #2a0a0a 0%,
+      #120606 45%,
+      #080303 100%);
+
+  box-shadow:
+    inset 0 0 0 2px var(--rim),
+    inset 0 0 24px var(--glow2),
+    inset 0 -14px 20px rgba(0,0,0,.70);
+
+  z-index: 1;
+}
+
+/* ===== Frame sheen (border ring) ===== */
+.pp-begin-btn::after{
+  content:"";
+  position:absolute;
+  inset:-3px;
+  border-radius: 0px;
+  padding: 3px;
+
+  background:
+    linear-gradient(to right,
+      var(--frameA) 0%,
+      var(--frameB) 20%,
+      rgba(255,255,255,.98) 50%,
+      var(--frameB) 80%,
+      var(--frameA) 100%) top / 100% 54% no-repeat,
+
+    linear-gradient(to right,
+      rgba(190,190,190,.08) 0%,
+      rgba(220,220,220,.18) 30%,
+      rgba(255,255,255,.75) 50%,
+      rgba(220,220,220,.18) 70%,
+      rgba(190,190,190,.08) 100%) bottom / 100% 46% no-repeat,
+
+    linear-gradient(to bottom,
+      var(--frameC),
+      var(--frameD) 55%,
+      rgba(255,255,255,.08));
+
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+
+  box-shadow: 0 0 18px var(--frameShadow);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ===== Text ===== */
+.pp-begin-text{
+  position: relative;
+  z-index: 3;
+
+  font-family: "Orbitron", "Segoe UI", system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 2px;
+  font-size: clamp(22px, 3.2vw, 34px);
+  line-height: 1;
+  text-transform: uppercase;
+
+  background: linear-gradient(to bottom,
+    var(--textTop) 0%,
+    var(--textMid) 45%,
+    var(--textBot) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 10px var(--textGlow1),
+    0 0 16px var(--textGlow2),
+    0 0 14px var(--textSpill);
+}
+
+
+
+/* =========================================================
+   Utility / Secondary version (gray + smaller)
+   Usage: class="pp-begin-btn pp-btn--utility"
+   Optional: add pp-btn--utility--pulse for a soft breathing glow
+   ========================================================= */
+
+.pp-begin-btn.pp-btn--utility{
+  height: 54px;                 /* smaller */
+  border-radius: 10px;          /* slightly softer */
+  --glow1: rgba(200,210,230,.14);
+  --glow2: rgba(200,210,230,.06);
+
+  --rim:    rgba(210,220,235,.35);
+  --inner1: rgba(200,210,230,.10);
+  --inner2: rgba(200,210,230,.04);
+
+  --frameA: rgba(255,255,255,.08);
+  --frameB: rgba(255,255,255,.22);
+  --frameC: rgba(170,180,200,.35);
+  --frameD: rgba(170,180,200,.12);
+
+  --frameShadow: rgba(140,150,170,.22);
+
+  /* utility text = cool gray-white */
+  --textTop: #f3f7ff;
+  --textMid: #cfd8ea;
+  --textBot: #aeb9d3;
+
+  --textGlow1: rgba(220,230,255,.18);
+  --textGlow2: rgba(180,200,255,.10);
+  --textSpill: rgba(120,140,180,.12);
+}
+
+/* Make the interior panel more neutral (override the red-ish base panel) */
+.pp-begin-btn.pp-btn--utility::before{
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 90% at 50% 0%,
+      rgba(255,255,255,.14) 0%,
+      rgba(255,255,255,.05) 24%,
+      rgba(0,0,0,0) 55%),
+
+    radial-gradient(140% 160% at 50% 45%,
+      var(--inner1) 0%,
+      var(--inner2) 40%,
+      rgba(0,0,0,0) 72%),
+
+    linear-gradient(to bottom,
+      #141a24 0%,
+      #0c1017 55%,
+      #070a10 100%);
+
+  box-shadow:
+    inset 0 0 0 1px var(--rim),
+    inset 0 0 18px rgba(180,190,210,.10),
+    inset 0 -14px 18px rgba(0,0,0,.70);
+
+  z-index: 1;
+}
+
+/* Frame ring: thinner + less “siren” */
+.pp-begin-btn.pp-btn--utility::after{
+  inset: -2px;
+  border-radius: 12px;
+  padding: 2px;
+
+  background:
+    linear-gradient(to right,
+      rgba(255,255,255,.06) 0%,
+      rgba(255,255,255,.18) 22%,
+      rgba(255,255,255,.55) 50%,
+      rgba(255,255,255,.18) 78%,
+      rgba(255,255,255,.06) 100%) top / 100% 52% no-repeat,
+
+    linear-gradient(to right,
+      rgba(255,255,255,.04) 0%,
+      rgba(255,255,255,.10) 30%,
+      rgba(255,255,255,.22) 50%,
+      rgba(255,255,255,.10) 70%,
+      rgba(255,255,255,.04) 100%) bottom / 100% 48% no-repeat,
+
+    linear-gradient(to bottom,
+      rgba(170,180,200,.45),
+      rgba(170,180,200,.18) 55%,
+      rgba(255,255,255,.06));
+
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+
+  box-shadow: 0 0 12px var(--frameShadow);
+}
+
+/* Text sizing for utility buttons */
+.pp-begin-btn.pp-btn--utility .pp-begin-text{
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  font-size: 18px; /* compact */
+  text-shadow:
+    0 1px 1px rgba(0,0,0,.75),
+    0 0 10px var(--textGlow1),
+    0 0 14px var(--textGlow2);
+}
+
+/* Optional soft pulse for utility (subtle, not attention-grabbing) */
+.pp-begin-btn.pp-btn--utility.pp-btn--utility--pulse{
+  animation: ppUtilityPulse 3.2s ease-in-out infinite;
+}
+@keyframes ppUtilityPulse{
+  0%,100%{ filter: drop-shadow(0 0 8px rgba(200,210,230,.10)); }
+  50%    { filter: drop-shadow(0 0 14px rgba(220,230,255,.16)); }
+}
+
+/* Press / hover polish */
+.pp-begin-btn.pp-btn--utility:hover{
+  filter: brightness(1.03);
+}
+.pp-begin-btn.pp-btn--utility:active{
+  transform: scale(.985);
+}
+
+
+
+
+/* =========================================================
+   Steel gray theme (same button, same sizes, same sheens)
+   Usage: <button class="pp-begin-btn steel-gray">...</button>
+   ========================================================= */
+
+.pp-begin-btn.steel-gray .pp-glow{
+  background:
+    radial-gradient(60% 120% at 50% 50%,
+      rgba(205, 220, 245, .20) 0%,
+      rgba(180, 195, 220, .10) 35%,
+      rgba(180, 195, 220, 0) 70%);
+  box-shadow: none;
+}
+
+/* Inner surface */
+.pp-begin-btn.steel-gray::before{
+  /* same structure, just neutral steel illumination */
+  background:
+    radial-gradient(120% 90% at 50% 0%,
+      rgba(255,255,255,.18) 0%,
+      rgba(255,255,255,.06) 22%,
+      rgba(0,0,0,0) 55%),
+
+    radial-gradient(140% 160% at 50% 45%,
+      rgba(200,210,230,.16) 0%,
+      rgba(160,170,190,.08) 35%,
+      rgba(0,0,0,0) 70%),
+
+    linear-gradient(to bottom,
+      #1a2230 0%,
+      #0f141c 45%,
+      #070a10 100%);
+
+  /* same depth, steel rim instead of red rim */
+  box-shadow:
+    inset 0 0 0 2px rgba(210,220,235,.50),
+    inset 0 0 24px rgba(180,190,210,.18),
+    inset 0 -14px 20px rgba(0,0,0,.70);
+}
+
+/* Frame sheen (border ring) */
+.pp-begin-btn.steel-gray::after{
+  background:
+    /* TOP: bright center flare fading to steel */
+    linear-gradient(to right,
+      rgba(160,170,190,.20) 0%,
+      rgba(210,220,235,.30) 20%,
+      rgba(255,255,255,.98) 50%,
+      rgba(210,220,235,.30) 80%,
+      rgba(160,170,190,.20) 100%) top / 100% 54% no-repeat,
+
+    /* BOTTOM: neutral with bright center */
+    linear-gradient(to right,
+      rgba(170,180,195,.08) 0%,
+      rgba(220,228,238,.18) 30%,
+      rgba(255,255,255,.75) 50%,
+      rgba(220,228,238,.18) 70%,
+      rgba(170,180,195,.08) 100%) bottom / 100% 46% no-repeat,
+
+    /* overall STEEL tint (was red) */
+    linear-gradient(to bottom,
+      rgba(170,185,205,.60),
+      rgba(170,185,205,.12) 55%,
+      rgba(255,255,255,.08));
+
+  box-shadow: 0 0 18px rgba(140,155,175,.35);
+}
+
+/* Text: keep gold gradient exactly as-is, but remove red spill and make it neutral */
+.pp-begin-btn.steel-gray .pp-begin-text{
+  text-shadow:
+    0 0 10px rgba(255,220,130,.55),
+    0 0 16px rgba(255,170,60,.35),
+    0 0 14px rgba(200,210,230,.18);
+}
+
+
+
+
+.brand-home{
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+}
+.brand-home img{ display:block; }
+
+
+
+
+
+
+
 
 

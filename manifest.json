@@ -1,6 +1,6 @@
 {
   "name": "Police Precinct: Dispatcher",
-  "short_name": "PP Dispatcher",
+  "short_name": "Police Precinct Dispatcher",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
