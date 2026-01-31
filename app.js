@@ -4,7 +4,7 @@
 
   const DEFAULT_SETTINGS = {
     audio: { musicEnabled: true, musicVolume: 0.5, sfxEnabled: true, sfxVolume: 0.8 },
-    features: { commendations: true, dispatches: true, crisis: true },
+    features: { commendations: true, commendationsTiming: false, dispatches: true, crisis: true },
     pacing: { dispatchRate: "normal", crisisRate: "rare" } // low|normal|high, rare|normal|frequent
   };
 
@@ -1384,27 +1384,11 @@ function openStartingPlayerSelector() {
             <div class="label">Number of Players</div>
             <input class="input" id="setupPlayers" type="number" min="1" max="6" value="${setup.players}">
           </div>
-          <div class="field">
-            <div class="label">Police Cards per Player</div>
-            <input class="input" id="setupPoliceCards" type="text" value="${calcPoliceCards(setup.players)}" disabled>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <div class="label">Punk Pool</div>
-            <input class="input" id="setupPunkPool" type="text" value="${calcPunkPool(setup.players)}" disabled>
-          </div>
-          <div class="field">
-            <div class="label">Calendar Start</div>
-            <input class="input" id="setupCalendarStart" type="text" value="${calcCalendarStart(setup.players)}" disabled>
-          </div>
         </div>
 
         <hr class="sep"/>
 
         <div class="row">
-          <button class="btn primary" id="btnGenerateSetup">Generate Setup Rolls</button>
           <button class="btn" id="btnReRollSetup">Re-Roll</button>
         </div>
 
@@ -1415,18 +1399,9 @@ function openStartingPlayerSelector() {
         const playersEl = $("#setupPlayers");
         const resultsEl = $("#setupResults");
 
-        const updateAutos = () => {
-          const p = clampInt(playersEl.value, 1, 6);
-          $("#setupPoliceCards").value = calcPoliceCards(p);
-          $("#setupPunkPool").value = calcPunkPool(p);
-          $("#setupCalendarStart").value = calcCalendarStart(p);
-        };
-
-        playersEl.addEventListener("input", updateAutos);
-
         const renderSetup = (gen) => {
           if (!gen) {
-            resultsEl.innerHTML = `<div class="item"><div class="item-text">Tap <b>Generate Setup Rolls</b> to create random block placements and punk distribution.</div></div>`;
+            resultsEl.innerHTML = `<div class="item"><div class="item-text">Adjust <b>Number of Players</b> to generate setup instructions.</div></div>`;
             return;
           }
 
@@ -1483,18 +1458,30 @@ function openStartingPlayerSelector() {
           `;
         };
 
-        const generate = () => {
-          setup.players = clampInt(playersEl.value, 1, 6);
+
+        // Auto-generate rolls whenever the player count changes.
+        let lastPlayers = null;
+        const generate = (force=false) => {
+          const p = clampInt(playersEl.value, 1, 6);
+          if (!force && p === lastPlayers) return;
+
+          lastPlayers = p;
+          setup.players = p;
           setup.generated = generateSetupRolls();
           state.setupDraft = setup;
           saveState();
           renderSetup(setup.generated);
         };
 
-        $("#btnGenerateSetup").addEventListener("click", generate);
-        $("#btnReRollSetup").addEventListener("click", generate);
+        // Re-roll keeps the same player count.
+        $("#btnReRollSetup").addEventListener("click", () => generate(true));
 
-        renderSetup(setup.generated);
+        // When players change, regenerate immediately.
+        playersEl.addEventListener("input", () => generate(false));
+        playersEl.addEventListener("change", () => generate(false));
+
+        // On open, always show generated setup based on current players.
+        generate(true);
       }
     });
   }
@@ -1506,38 +1493,57 @@ function openStartingPlayerSelector() {
       title: "Settings",
       modalType: "settings",
       bodyHtml: `
-<!--
         <div class="item">
-          <div class="item-title">Audio</div>
+          <div class="item-title">Commendations</div>
           <div class="row">
-            <div class="field">
-              <div class="label">Music</div>
-              <select class="select" id="setMusicEnabled">
-                <option value="true" ${s.audio.musicEnabled ? "selected":""}>On</option>
-                <option value="false" ${!s.audio.musicEnabled ? "selected":""}>Off</option>
-              </select>
-            </div>
-            <div class="field">
-              <div class="label">Music Volume</div>
-              <input class="input" id="setMusicVol" type="number" min="0" max="1" step="0.05" value="${s.audio.musicVolume}">
-            </div>
+            <label class="toggle">
+              <input type="checkbox" id="setCommEnabled" ${s.features.commendations ? "checked" : ""}>
+              <span>Enable</span>
+            </label>
+            <label class="toggle" title="If enabled, your overall progress bar can slowly drift downward over time until the next logged action.">
+              <input type="checkbox" id="setCommTiming" ${s.features.commendationsTiming ? "checked" : ""}>
+              <span>Timed</span>
+            </label>
           </div>
+          <!--<div class="tiny muted">Commendations trigger when clue/arrest/emergency totals hit milestones.</div>-->
+        </div>
 
+        <div class="item">
+          <div class="item-title">Dispatches</div>
           <div class="row">
-            <div class="field">
-              <div class="label">Sounds</div>
-              <select class="select" id="setSfxEnabled">
-                <option value="true" ${s.audio.sfxEnabled ? "selected":""}>On</option>
-                <option value="false" ${!s.audio.sfxEnabled ? "selected":""}>Off</option>
+            <label class="toggle">
+              <input type="checkbox" id="setDispEnabled" ${s.features.dispatches ? "checked" : ""}>
+              <span>Enable</span>
+            </label>
+            <div class="field" style="flex:1;">
+              <div class="label">Frequency</div>
+              <select class="select" id="setDispRate">
+                <option value="low" ${s.pacing.dispatchRate==="low"?"selected":""}>Low</option>
+                <option value="normal" ${s.pacing.dispatchRate==="normal"?"selected":""}>Normal</option>
+                <option value="high" ${s.pacing.dispatchRate==="high"?"selected":""}>High</option>
               </select>
-            </div>
-            <div class="field">
-              <div class="label">SFX Volume</div>
-              <input class="input" id="setSfxVol" type="number" min="0" max="1" step="0.05" value="${s.audio.sfxVolume}">
             </div>
           </div>
         </div>
--->
+
+        <div class="item">
+          <div class="item-title">Crisis</div>
+          <div class="row">
+            <label class="toggle">
+              <input type="checkbox" id="setCrisisEnabled" ${s.features.crisis ? "checked" : ""}>
+              <span>Enable</span>
+            </label>
+            <div class="field" style="flex:1;">
+              <div class="label">Frequency</div>
+              <select class="select" id="setCrisisRate">
+                <option value="rare" ${s.pacing.crisisRate==="rare"?"selected":""}>Rare</option>
+                <option value="normal" ${s.pacing.crisisRate==="normal"?"selected":""}>Normal</option>
+                <option value="frequent" ${s.pacing.crisisRate==="frequent"?"selected":""}>Frequent</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div class="item">
           <div class="item-title">Haptics</div>
           <div class="row">
@@ -1547,56 +1553,7 @@ function openStartingPlayerSelector() {
               <div class="tiny muted" id="hapticsStatus">—</div>
             </div>
           </div>
-          <div class="tiny muted">Note: Vibration only works on supported devices/browsers and may be blocked in some contexts.</div>
-        </div>
-
-        <div class="item">
-          <div class="item-title">Features</div>
-          <div class="row">
-            <div class="field">
-              <div class="label">Commendations</div>
-              <select class="select" id="setComm">
-                <option value="true" ${s.features.commendations ? "selected":""}>On</option>
-                <option value="false" ${!s.features.commendations ? "selected":""}>Off</option>
-              </select>
-            </div>
-            <div class="field">
-              <div class="label">Dispatches / Radio</div>
-              <select class="select" id="setDisp">
-                <option value="true" ${s.features.dispatches ? "selected":""}>On</option>
-                <option value="false" ${!s.features.dispatches ? "selected":""}>Off</option>
-              </select>
-            </div>
-            <div class="field">
-              <div class="label">Crisis</div>
-              <select class="select" id="setCrisis">
-                <option value="true" ${s.features.crisis ? "selected":""}>On</option>
-                <option value="false" ${!s.features.crisis ? "selected":""}>Off</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="item-title">Pacing</div>
-          <div class="row">
-            <div class="field">
-              <div class="label">Dispatch Frequency</div>
-              <select class="select" id="setDispRate">
-                <option value="low" ${s.pacing.dispatchRate==="low"?"selected":""}>Low</option>
-                <option value="normal" ${s.pacing.dispatchRate==="normal"?"selected":""}>Normal</option>
-                <option value="high" ${s.pacing.dispatchRate==="high"?"selected":""}>High</option>
-              </select>
-            </div>
-            <div class="field">
-              <div class="label">Crisis Frequency</div>
-              <select class="select" id="setCrisisRate">
-                <option value="rare" ${s.pacing.crisisRate==="rare"?"selected":""}>Rare</option>
-                <option value="normal" ${s.pacing.crisisRate==="normal"?"selected":""}>Normal</option>
-                <option value="frequent" ${s.pacing.crisisRate==="frequent"?"selected":""}>Frequent</option>
-              </select>
-            </div>
-          </div>
+          <div class="tiny muted">Vibration works only on supported devices/browsers and may be blocked in some contexts.</div>
         </div>
       `,
       footerButtons: [
@@ -1615,37 +1572,66 @@ function openStartingPlayerSelector() {
             : "Not supported";
         });
 
-        const readBool = (id) => $(`#${id}`).value === "true";
-        $("#setMusicEnabled").addEventListener("change", () => {
-          s.audio.musicEnabled = readBool("setMusicEnabled");
-          saveState();
-          updateQuickAudioIcon();
-          audio.applySettings();
-        });
-        $("#setSfxEnabled").addEventListener("change", () => {
-          s.audio.sfxEnabled = readBool("setSfxEnabled");
-          saveState();
-          updateQuickAudioIcon();
-          audio.applySettings();
-        });
+        // Feature + pacing toggles
+        const commEnabledEl = document.getElementById("setCommEnabled");
+        const commTimingEl = document.getElementById("setCommTiming");
+        const dispEnabledEl = document.getElementById("setDispEnabled");
+        const dispRateEl = document.getElementById("setDispRate");
+        const crisisEnabledEl = document.getElementById("setCrisisEnabled");
+        const crisisRateEl = document.getElementById("setCrisisRate");
 
-        $("#setMusicVol").addEventListener("input", () => {
-          s.audio.musicVolume = clampNum($("#setMusicVol").value, 0, 1);
-          saveState();
-          audio.applySettings();
-        });
-        $("#setSfxVol").addEventListener("input", () => {
-          s.audio.sfxVolume = clampNum($("#setSfxVol").value, 0, 1);
-          saveState();
-          audio.applySettings();
-        });
+        const syncDisabled = () => {
+          if (commTimingEl && commEnabledEl) commTimingEl.disabled = !commEnabledEl.checked;
+          if (dispRateEl && dispEnabledEl) dispRateEl.disabled = !dispEnabledEl.checked;
+          if (crisisRateEl && crisisEnabledEl) crisisRateEl.disabled = !crisisEnabledEl.checked;
+        };
 
-        $("#setComm").addEventListener("change", () => { s.features.commendations = readBool("setComm"); saveState(); renderGame(); });
-        $("#setDisp").addEventListener("change", () => { s.features.dispatches = readBool("setDisp"); saveState(); renderGame(); });
-        $("#setCrisis").addEventListener("change", () => { s.features.crisis = readBool("setCrisis"); saveState(); });
+        if (commEnabledEl) {
+          commEnabledEl.addEventListener("change", () => {
+            s.features.commendations = commEnabledEl.checked;
+            if (!s.features.commendations) s.features.commendationsTiming = false;
+            saveState();
+            syncDisabled();
+            renderGame();
+          });
+        }
+        if (commTimingEl) {
+          commTimingEl.addEventListener("change", () => {
+            s.features.commendationsTiming = !!commTimingEl.checked;
+            saveState();
+          });
+        }
 
-        $("#setDispRate").addEventListener("change", () => { s.pacing.dispatchRate = $("#setDispRate").value; saveState(); });
-        $("#setCrisisRate").addEventListener("change", () => { s.pacing.crisisRate = $("#setCrisisRate").value; saveState(); });
+        if (dispEnabledEl) {
+          dispEnabledEl.addEventListener("change", () => {
+            s.features.dispatches = dispEnabledEl.checked;
+            saveState();
+            syncDisabled();
+            renderGame();
+          });
+        }
+        if (dispRateEl) {
+          dispRateEl.addEventListener("change", () => {
+            s.pacing.dispatchRate = dispRateEl.value;
+            saveState();
+          });
+        }
+
+        if (crisisEnabledEl) {
+          crisisEnabledEl.addEventListener("change", () => {
+            s.features.crisis = crisisEnabledEl.checked;
+            saveState();
+            syncDisabled();
+          });
+        }
+        if (crisisRateEl) {
+          crisisRateEl.addEventListener("change", () => {
+            s.pacing.crisisRate = crisisRateEl.value;
+            saveState();
+          });
+        }
+
+        syncDisabled();
       }
     });
   }

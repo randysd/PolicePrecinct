@@ -39,6 +39,7 @@
     </div>
 
     <div class="header-actions">
+      <button class="icon-btn" id="btnEndShift">🛑</button>
       <button class="icon-btn hidden" id="btnInstallApp" title="Install App">⬇️</button>
       <button class="icon-btn" id="btnStartPlayer" title="Starting Player Selector">🛡️</button>
       <button class="icon-btn" id="btnDice" title="Dice Roller">🎲</button>
@@ -112,7 +113,7 @@
 
     <!-- GAME VIEW -->
     <section id="viewGame" class="view">
-      <div class="game-topbar">
+      <div class="game-topbar" style="display:none">
         <div class="topbar-left">
           <div class="stat-pill" id="pillOverall">
             Overall: <span class="mono" id="overallPct">0%</span>
@@ -166,9 +167,7 @@ Investigation
 
 --></div>
 
-            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="investigation" aria-label="Investigation help">
-              Draw Cards to find clues
-            </button>
+            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="investigation" aria-label="Investigation help"><!--Draw Cards to find clues--></button>
             <div class="card-meta">
               <span class="mono pct-debug" id="investigationPct">0%</span>
               <span class="led" id="investigationLed" title="Investigation success rate"></span>
@@ -227,9 +226,7 @@ Investigation
             <div class="card-title">🔗 Arrest</div>
 -->
 
-            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="arrest" aria-label="Arrest help">
-              Roll Dice to remove punks
-            </button>
+            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="arrest" aria-label="Arrest help"><!--Roll Dice to remove punks--></button>
             <div class="card-meta">
               <span class="mono pct-debug" id="arrestPct">0%</span>
               <span class="led" id="arrestLed" title="Arrest success rate"></span>
@@ -285,9 +282,7 @@ Investigation
 <!--
             <div class="card-title">🚨 Emergency</div>
 -->
-            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="emergency" aria-label="Emergency help">
-              Roll Dice to handle emergency
-            </button>
+            <button class="card-instructions" type="button" data-open="actionHelp" data-cat="emergency" aria-label="Emergency help"><!--Roll Dice to handle emergency--></button>
             <div class="card-meta">
               <span class="mono pct-debug" id="emergencyPct">0%</span>
               <span class="led" id="emergencyLed" title="Emergency success rate"></span>

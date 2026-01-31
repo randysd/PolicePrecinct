@@ -30,6 +30,7 @@ body{
   background-image: url('background3.png');
   background-size: cover;
   background-repeat: no-repeat;
+  background-position: center;
 }
 
 /* Update banner */
@@ -293,13 +294,13 @@ justify-content: center;
 }
 
 .card-investigation{
-  background: linear-gradient(180deg, rgba(255,255,0,.35), rgba(255,255,255,.02));
+  background: linear-gradient(180deg, rgba(77,71,26,0.8), rgba(36,29,26,0.8));
 }
 .card-arrest{
-  background: linear-gradient(180deg, rgba(0,0,255,.2), rgba(255,255,255,.02));
+  background: linear-gradient(180deg, rgba(22,14,77,0.8), rgba(22,14,33,0.8));
 }
 .card-emergency{
-  background: linear-gradient(180deg, rgba(255,0,0,.25), rgba(255,255,255,.02));
+  background: linear-gradient(180deg, rgba(73,14,26,0.8), rgba(40,14,26,0.8));
 }
 
 .led{
@@ -606,6 +607,31 @@ hr.sep{
   border:none;
   border-top:1px solid var(--line);
   margin: 12px 0;
+}
+
+/* Settings toggles */
+.toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+  cursor:pointer;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.02);
+}
+.toggle input[type="checkbox"]{
+  width: 18px;
+  height: 18px;
+  accent-color: #4ea3ff;
+}
+.toggle input[disabled]{
+  opacity: .6;
+}
+.toggle span{
+  font-size: 13px;
+  color: var(--text);
 }
 
 /* Lists */
