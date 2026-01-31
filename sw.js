@@ -1,6 +1,6 @@
 /* service-worker.js */
 // Bump this any time you change the precache list or caching strategy
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 const CACHE_NAME = `pp-dispatcher-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pp-dispatcher-runtime-${CACHE_VERSION}`;
 
