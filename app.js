@@ -204,7 +204,21 @@ function showHome() {
 
     window.addEventListener("load", async () => {
       try {
-        swRegistration = await navigator.serviceWorker.register("./sw.js");
+        swRegistration = await navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache: "none" });
+
+        // Proactively check for updates (helps on mobile where SW script can be sticky)
+        try { await swRegistration.update(); } catch {}
+        // Re-check when the tab becomes visible again
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            swRegistration?.update?.().catch(() => {});
+          }
+        });
+        // Re-check periodically while the app is open
+        setInterval(() => {
+          swRegistration?.update?.().catch(() => {});
+        }, 60 * 1000);
+
 
         // If there's already a waiting SW (rare but possible)
         if (swRegistration.waiting) {
@@ -2669,17 +2683,32 @@ function setBeginShiftButton(isActive) {
 
     const picked = [];
     const used = new Set();
-    while (picked.length < count) {
+    let attempts = 0;
+
+    while (picked.length < count && weighted.length && attempts < 300) {
+      attempts++;
       const c = weightedPick(weighted);
       if (!c) break;
-      if (used.has(c.id)) continue;
-      used.add(c.id);
+
+      // Robust uniqueness key (classifieds may not have an id)
+      const key = c.id ?? c.head ?? c.label ?? c.textTpl ?? c.text ?? JSON.stringify(c);
+
+      if (used.has(key)) continue;
+      used.add(key);
+
       picked.push({
-        id: c.id,
+        id: c.id ?? key,
         head: c.head || c.label || "NOTICE",
         text: applyTemplate(c.textTpl || c.text || "", ctx),
         tags: c.tags || []
       });
+
+      // Remove chosen item from pool
+      for (let i = weighted.length - 1; i >= 0; i--) {
+        const x = weighted[i]?.item;
+        const xKey = x?.id ?? x?.head ?? x?.label ?? x?.textTpl ?? x?.text ?? JSON.stringify(x);
+        if (xKey === key) weighted.splice(i, 1);
+      }
     }
     return picked;
   }
@@ -2792,15 +2821,29 @@ function setBeginShiftButton(isActive) {
     const focus = getGameFocusProfile(g); // {primary, secondary, intensity}
     const weighted = buildWeightedAdPool(focus);
 
-    // Pick unique ads by weighted draw
+    // Pick unique ads by weighted draw (safe: supports missing ids and prevents infinite loops)
     const picked = [];
     const used = new Set();
-    while (picked.length < count && weighted.length) {
+    let attempts = 0;
+
+    while (picked.length < count && weighted.length && attempts < 150) {
+      attempts++;
       const ad = weightedPick(weighted);
       if (!ad) break;
-      if (used.has(ad.id)) continue;
-      used.add(ad.id);
+
+      // Robust uniqueness key (ads may not have an id)
+      const key = ad.id ?? ad.src ?? ad.title ?? ad.label ?? JSON.stringify(ad);
+
+      if (used.has(key)) continue;
+      used.add(key);
       picked.push(ad);
+
+      // Remove chosen item from the pool so we don't keep re-picking it
+      for (let i = weighted.length - 1; i >= 0; i--) {
+        const x = weighted[i]?.item;
+        const xKey = x?.id ?? x?.src ?? x?.title ?? x?.label ?? JSON.stringify(x);
+        if (xKey === key) weighted.splice(i, 1);
+      }
     }
 
     // Fallback if something went weird

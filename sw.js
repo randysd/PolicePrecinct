@@ -4,11 +4,9 @@ const CACHE_VERSION = "v9";
 const CACHE_NAME = `pp-dispatcher-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pp-dispatcher-runtime-${CACHE_VERSION}`;
 
-const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./styles.css",
-  "./app.js",
+const APP_SHELL = [  "./index.html",
+  "./styles.css?v=v9",
+  "./app.js?v=v9",
   "./manifest.json",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
@@ -95,23 +93,46 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
 
-  // Navigation requests: serve app shell fallback
-  if (req.mode === "navigate") {
-    event.respondWith(
-      fetch(req).catch(() => caches.match("./index.html"))
-    );
+  // Never cache the service worker script itself
+  if (sameOrigin && url.pathname.endsWith("/sw.js")) {
+    event.respondWith(fetch(req, { cache: "no-store" }));
     return;
   }
 
-  // Same-origin assets: stale-while-revalidate runtime caching
+  // Navigations / HTML: network-first so new releases show up immediately
+  const acceptsHTML = (req.headers.get("accept") || "").includes("text/html");
+  if (req.mode === "navigate" || (sameOrigin && acceptsHTML)) {
+    event.respondWith(networkFirst(req));
+    return;
+  }
+
+  // Same-origin assets/data: stale-while-revalidate
   if (sameOrigin) {
     event.respondWith(staleWhileRevalidate(req));
     return;
   }
 
-  // Cross-origin: network-first
-  event.respondWith(fetch(req).catch(() => caches.match(req)));
+  // Cross-origin: just go to network (no runtime caching)
+  event.respondWith(fetch(req));
 });
+
+
+
+async function networkFirst(req) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  try {
+    const fresh = await fetch(req, { cache: "no-store" });
+    if (fresh && fresh.status === 200) {
+      cache.put(req, fresh.clone());
+    }
+    return fresh;
+  } catch (e) {
+    const cached = await cache.match(req);
+    if (cached) return cached;
+    // Offline fallback for SPA navigations
+    return caches.match("./index.html");
+  }
+}
 
 async function staleWhileRevalidate(req) {
   const cache = await caches.open(RUNTIME_CACHE);
