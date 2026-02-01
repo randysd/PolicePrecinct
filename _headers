@@ -1,0 +1,14 @@
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/index.html
+  Cache-Control: no-cache
+
+/manifest.json
+  Cache-Control: no-cache
+
+/styles.css
+  Cache-Control: no-cache
+
+/*
+  Cache-Control: public, max-age=3600
