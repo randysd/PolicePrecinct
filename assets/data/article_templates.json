@@ -1,0 +1,206 @@
+{
+  "masthead": {
+    "title": "THE COMMONVILLE GAZETTE",
+    "tagline": "Serving Commonville Since 1898"
+  },
+  "mastheads": [
+    "FROM THE POLICE BEAT",
+    "COMMONVILLE POLICE BLOTTER",
+    "GAZETTE SPECIAL REPORT"
+  ],
+  "kickers": [
+    "Gazette Desk",
+    "By Staff Writer",
+    "City Desk",
+    "From the Police Beat"
+  ],
+  "headline": {
+    "win": [
+      "COMMONVILLE BREATHES AGAIN AFTER SUSPECT TAKEN INTO CUSTODY",
+      "LONG NIGHT ENDS WITH ARREST IN COMMONVILLE",
+      "PRECINCT BREAKS CASE AFTER TENSE SHIFT"
+    ],
+    "loss_unsolved": [
+      "SUSPECT SLIPS AWAY AS LEADS RUN COLD",
+      "COMMONVILLE LEFT WAITING AFTER CASE STALLS",
+      "QUESTIONS LINGER FOLLOWING INCONCLUSIVE SHIFT"
+    ],
+    "loss_crimewave": [
+      "SIRENS DOMINATE THE NIGHT AS CALLS OVERWHELM PRECINCT",
+      "COMMONVILLE STRETCHED THIN DURING CHAOTIC SHIFT",
+      "CITY REELS AFTER RELENTLESS RUN OF INCIDENTS"
+    ]
+  },
+  "subhead": {
+    "excellent": [
+      "A decisive shift brought clear results and a noticeable sense of relief across {neighborhoodA} and beyond.",
+      "Steady police work kept pressure on throughout the night as Commonville finally found room to breathe."
+    ],
+    "strong": [
+      "Coordinated efforts paid off after hours of tense activity across {neighborhoodA}, {neighborhoodB}, and nearby blocks.",
+      "Responders kept their footing through a demanding run of calls, maintaining control where it counted."
+    ],
+    "mixed": [
+      "Moments of progress were tempered by mounting challenges as the shift moved across the city.",
+      "An uneven night tested officers across multiple fronts, with momentum shifting more than once."
+    ],
+    "struggling": [
+      "Limited resources and mounting calls complicated the response as pressure rose across {neighborhoodB}.",
+      "The department faced an uphill battle from the outset, with little time to reset between incidents."
+    ],
+    "dire": [
+      "A difficult night left the city uneasy, with the radio rarely quiet and answers hard to come by.",
+      "Commonville felt the strain as officers fought to keep pace with a punishing run of activity."
+    ]
+  },
+  "body": {
+    "opening": [
+      "What began as a routine shift quickly took on added urgency as events unfolded across Commonville.",
+      {
+        "text": "Officers found themselves navigating a rapidly evolving situation as calls came in from {neighborhoodA} to {neighborhoodC}.",
+        "hooks": ["sirens", "night"]
+      },
+      {
+        "text": "Even before the first hour had passed, a growing paper trail hinted that this would not be a quiet shift.",
+        "hooks": ["paperwork"]
+      },
+      "The tone of the shift shifted early as circumstances refused to settle."
+    ],
+    "focus_investigation": [
+      {
+        "text": "Investigators worked methodically, following threads wherever they led and refusing to let promising leads slip away.",
+        "hooks": ["investigation"]
+      },
+      {
+        "text": "Detectives leaned heavily on legwork and intuition, piecing together fragments as the night wore on.",
+        "hooks": ["investigation", "night"]
+      },
+      {
+        "text": "By midnight, officers were juggling interviews, timestamps, and a stack of reports that seemed to grow with every lead.",
+        "hooks": ["paperwork", "overtime"]
+      },
+      {
+        "text": "Tips from local businesses helped tighten the timeline as investigators moved storefront to storefront.",
+        "hooks": ["community", "grocery", "coffee", "bank"]
+      }
+    ],
+    "focus_arrest": [
+      {
+        "text": "Arrests came through assertive action, with officers moving quickly when opportunities presented themselves.",
+        "hooks": ["arrest"]
+      },
+      {
+        "text": "Street units played a decisive role, stepping in repeatedly to bring volatile situations under control.",
+        "hooks": ["arrest", "sirens"]
+      },
+      {
+        "text": "Multiple stops near bars and late-night storefronts kept patrols busy as tensions flared after dark.",
+        "hooks": ["bar", "liquor", "night"]
+      },
+      {
+        "text": "Investigators noted that several tips traced back to quick cash trades — the kind of churn that keeps pawn counters busy.",
+        "hooks": ["pawn", "crimewave"]
+      }
+    ],
+    "focus_emergency": [
+      {
+        "text": "Emergency calls demanded immediate attention, forcing rapid decisions under mounting pressure.",
+        "hooks": ["emergency", "sirens"]
+      },
+      {
+        "text": "First responders were stretched across the city, juggling urgent situations back-to-back.",
+        "hooks": ["emergency", "sirens", "chaos"]
+      },
+      {
+        "text": "Commonville Hospital reported a steady flow of late-night arrivals as medics rotated through scene calls.",
+        "hooks": ["hospital", "ems", "night"]
+      },
+      {
+        "text": "Fire and medical units were spotted moving between {neighborhoodB} and {neighborhoodC} as the radio stayed active.",
+        "hooks": ["fire", "ems", "sirens"]
+      }
+    ],
+    "pressure_calm": [
+      "Despite the activity, the shift maintained a measured pace for much of the night.",
+      "For long stretches, the city held its breath rather than erupting."
+    ],
+    "pressure_busy": [
+      "The night moved in waves, with brief lulls giving way to fresh bursts of radio traffic.",
+      "Units cycled through calls with little downtime, keeping the city from tipping too far."
+    ],
+    "pressure_chaotic": [
+      {
+        "text": "Radio chatter rarely quieted, with officers bouncing from one urgent call to the next.",
+        "hooks": ["sirens", "chaos"]
+      },
+      {
+        "text": "With dispatch traffic stacking up, supervisors urged units to clear lingering calls before the backlog grew.",
+        "hooks": ["congestion", "sirens"]
+      },
+      "As the night wore on, the sense of urgency only intensified."
+    ]
+  },
+  "closing": {
+    "win": [
+      "By the end of the shift, relief was evident as the case reached its conclusion.",
+      "When the dust settled, officers could finally step back knowing their efforts had paid off."
+    ],
+    "loss": [
+      "As the shift drew to a close, unanswered questions remained.",
+      "The night ended without clear resolution, leaving the city waiting for what comes next."
+    ]
+  },
+  "editorial_asides": {
+    "tough": [
+      "The Gazette notes that consistent follow-through — not luck — is what keeps a city safe when the night turns sharp.",
+      "Calls for stronger coordination across precinct resources have grown louder among residents."
+    ],
+    "community": [
+      "Residents are reminded to report tips promptly; small details can matter when a case tightens late in the night.",
+      "City officials urged patience and cooperation as investigators continue their work."
+    ],
+    "skeptical": [
+      "Some neighbors questioned whether the city’s fragmented response can keep pace when a case refuses to break.",
+      "Public confidence tends to fray when timelines stretch and answers remain scarce."
+    ],
+    "supportive": [
+      "Veteran observers noted that even disciplined crews can be overwhelmed when calls stack faster than units can clear them.",
+      "Officials emphasized that recovery begins with rest, regrouping, and learning from the night’s pressure."
+    ],
+    "ia": [
+      "Internal Affairs sources indicated that procedure reviews remain ongoing in sensitive cases.",
+      "The Gazette encourages transparency and documentation whenever questions of conduct arise."
+    ],
+    "default": [
+      "Officials declined to comment on specifics, citing the ongoing nature of the case.",
+      "Residents were urged to remain vigilant."
+    ]
+  },
+  "blotter": {
+    "default": [
+      "{district} — Residents reported a disturbance; units cleared the scene without further incident.",
+      "{district} — Patrol presence increased following multiple late-night complaints.",
+      "{district} — A brief traffic stop caused delays before the roadway reopened."
+    ],
+    "win": [
+      "{district} — Officers confirmed an arrest following a late-breaking lead.",
+      "{district} — A coordinated response brought a tense situation under control."
+    ],
+    "loss": [
+      "{district} — Calls continued into the late hours as residents reported concerns.",
+      "{district} — Units canvassed the area after reports of suspicious activity."
+    ],
+    "investigation": [
+      "{district} — Detectives followed up on tips as neighbors shared details from earlier in the day.",
+      "{district} — Investigators canvassed nearby businesses for additional information."
+    ],
+    "arrest": [
+      "{district} — One individual was taken into custody following a brief pursuit.",
+      "{district} — Officers responded to a disorderly conduct call; situation stabilized."
+    ],
+    "emergency": [
+      "{district} — Medical response requested; EMS assisted on scene.",
+      "{district} — Fire/medical call resolved; residents advised to avoid the area temporarily."
+    ]
+  }
+}

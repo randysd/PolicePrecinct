@@ -1,12 +1,12 @@
 /* service-worker.js */
 // Bump this any time you change the precache list or caching strategy
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v14";
 const CACHE_NAME = `pp-dispatcher-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pp-dispatcher-runtime-${CACHE_VERSION}`;
 
 const APP_SHELL = [  "./index.html",
-  "./styles.css?v=v9",
-  "./app.js?v=v9",
+  "./styles.css?v=v11",
+  "./app.js?v=v11",
   "./manifest.json",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
@@ -14,6 +14,7 @@ const APP_SHELL = [  "./index.html",
   // data
   "./assets/data/ads.json",
   "./assets/data/classifieds.json",
+  "./assets/data/article_templates.json",
   "./assets/data/dispatches.json",
   "./assets/data/commendations.json",
   "./assets/data/crises.json",
@@ -23,6 +24,7 @@ const APP_SHELL = [  "./index.html",
   "./assets/ads/ad_tow_truck.png",
   "./assets/ads/ad_pawn_shop.png",
   "./assets/ads/ad_diner.png",
+  "./assets/ads/ad_police_scanner.png",
 
   // Audio: precache known files
   "./assets/audio/music_main.mp3",

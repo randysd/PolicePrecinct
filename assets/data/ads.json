@@ -4,23 +4,191 @@
       "id": "donut",
       "type": "image",
       "src": "ad_donut_shop.png",
-      "alt": "Donut ad",
-      "tags": ["night", "calm", "investigation"]
+      "alt": "Ole's Donut Shop ad",
+      "tags": ["coffee", "night", "calm", "community", "relief", "victory"]
+    },
+    {
+      "id": "diner",
+      "type": "image",
+      "src": "ad_diner.png",
+      "alt": "Late-night diner ad",
+      "tags": ["night", "sirens", "chaos", "community", "relief", "overtime"]
     },
     {
       "id": "tow",
       "type": "image",
       "src": "ad_tow_truck.png",
       "alt": "Tow service ad",
-      "tags": ["emergency", "night"]
+      "tags": ["emergency", "night", "chaos", "sirens", "vehicle"]
     },
     {
-      "id": "coffee",
+      "id": "pawn",
+      "type": "image",
+      "src": "ad_pawn_shop.png",
+      "alt": "Jake's Pawnshop ad",
+      "tags": ["arrest", "investigation", "crimewave", "grim", "tough", "pawn"]
+    },
+    {
+      "id": "scanner",
+      "type": "image",
+      "src": "ad_police_scanner.png",
+      "alt": "Police scanner ad",
+      "tags": ["sirens", "crimewave", "night", "tough", "radio"]
+    },
+
+    { "id": "munder_difflin",
       "type": "text",
-      "title": "NIGHT OWL COFFEE",
-      "body": "Open 24/7. Free refills for uniformed officers.",
-      "fine": "Corner of 6th & Marlowe",
-      "tags": ["night", "investigation"]
+      "title": "MUNDER DIFFLIN PAPER CO.",
+      "body": "Case files. Citation pads. Evidence labels. When paperwork piles up, we deliver.",
+      "fine": "Booth Towers • Same-day drops for city agencies",
+      "tags": ["paperwork", "investigation", "overtime", "community", "booth", "office"]
+    },
+    {
+      "id": "commonville_hospital",
+      "type": "text",
+      "title": "COMMONVILLE HOSPITAL",
+      "body": "ER open 24/7. Fast triage when the night turns sharp.",
+      "fine": "Residents: bring ID • Visitors: check-in required",
+      "tags": ["hospital", "injury", "emergency", "night", "sirens"]
+    },
+    {
+      "id": "stone_bank",
+      "type": "text",
+      "title": "STONE BANK & TRUST",
+      "body": "Safe deposit. Business loans. Night drop for after-hours deposits.",
+      "fine": "Downtown Branch • Member FDIC",
+      "tags": ["bank", "finance", "investigation", "community"]
+    },
+    {
+      "id": "sitz_coffee",
+      "type": "text",
+      "title": "SITZ COFFEE SHOP",
+      "body": "Hot coffee, steady nerves. Open early for first shift.",
+      "fine": "Across from the plaza",
+      "tags": ["coffee", "calm", "community", "relief", "morning"]
+    },
+    {
+      "id": "loefgren_cafe",
+      "type": "text",
+      "title": "LOEFGREN CAFE",
+      "body": "Sandwiches, soup, and a quiet booth when you need to regroup.",
+      "fine": "Daily specials • Takeout available",
+      "tags": ["coffee", "calm", "community", "relief"]
+    },
+    {
+      "id": "patsouras_grocer",
+      "type": "text",
+      "title": "PATSOURAS GROCER",
+      "body": "Fresh produce • Pantry staples • Late-night essentials.",
+      "fine": "Corner market • Friendly prices",
+      "tags": ["grocery", "community", "calm", "night"]
+    },
+    {
+      "id": "snyders_liquors",
+      "type": "text",
+      "title": "SNYDER'S LIQUORS",
+      "body": "Stocked shelves. Fast checkout. Please drink responsibly.",
+      "fine": "Open late • ID required",
+      "tags": ["liquor", "night", "bar", "crimewave"]
+    },
+    {
+      "id": "commonville_hotel",
+      "type": "text",
+      "title": "COMMONVILLE HOTEL",
+      "body": "Clean rooms. Quiet floors. Ask about weekly rates.",
+      "fine": "Downtown • Walking distance to restaurants",
+      "tags": ["hotel", "lodging", "community", "night", "overtime"]
+    },
+    {
+      "id": "duffys_bar",
+      "type": "text",
+      "title": "DUFFY'S BAR",
+      "body": "Cold taps and live chatter. Keep it friendly.",
+      "fine": "Happy hour • Please arrange a ride",
+      "tags": ["bar", "night", "crimewave", "tough"]
+    },
+    {
+      "id": "police_department",
+      "type": "text",
+      "title": "COMMONVILLE POLICE DEPARTMENT",
+      "body": "Serve with honor. Hiring: dispatch trainees and records clerks.",
+      "fine": "Apply in person • Background check required",
+      "tags": ["community", "radio", "paperwork", "justice"]
+    },
+    {
+      "id": "ia_hotline",
+      "type": "text",
+      "title": "INTERNAL AFFAIRS HOTLINE",
+      "body": "See something off? Report it. Confidential intake available.",
+      "fine": "Integrity builds trust",
+      "tags": ["internalaffairs", "corruption", "justice", "community"]
+    },
+    {
+      "id": "booth_tower_leasing",
+      "type": "text",
+      "title": "BOOTH TOWERS — OFFICE LEASING",
+      "body": "Flexible suites for growing firms. Secure access, modern elevators.",
+      "fine": "Call leasing • Tours by appointment",
+      "tags": ["booth", "office", "paperwork", "community"]
+    },
+
+    {
+      "id": "warehouse_hurtig",
+      "type": "text",
+      "title": "HURTIG WAREHOUSE STORAGE",
+      "body": "Climate-controlled storage and secure bays. Inventory stays put.",
+      "fine": "Keys logged • Cameras on-site",
+      "tags": ["warehouse", "security", "investigation", "crimewave"]
+    },
+    {
+      "id": "warehouse_acme",
+      "type": "text",
+      "title": "ACME WAREHOUSE SUPPLY",
+      "body": "Pallet jacks, racks, locks, and labeling. Keep your floor running.",
+      "fine": "Bulk discounts • Delivery available",
+      "tags": ["warehouse", "paperwork", "community"]
+    },
+    {
+      "id": "warehouse_boardgame",
+      "type": "text",
+      "title": "BOARDGAME WAREHOUSE",
+      "body": "Need a break from the grind? Pick up a new tabletop favorite.",
+      "fine": "Family nights every Friday",
+      "tags": ["community", "calm", "relief", "warehouse"]
+    },
+
+    {
+      "id": "apartments_knights",
+      "type": "text",
+      "title": "KNIGHT'S APARTMENTS",
+      "body": "Quiet building. On-site manager. Heat included.",
+      "fine": "Background check • No loud parties",
+      "tags": ["apartments", "community", "calm", "night"]
+    },
+    {
+      "id": "apartments_pearson",
+      "type": "text",
+      "title": "PEARSON APARTMENTS",
+      "body": "Studios and one-beds available. Walkable neighborhood.",
+      "fine": "Limited availability",
+      "tags": ["apartments", "community"]
+    },
+
+    {
+      "id": "bail_bonds",
+      "type": "text",
+      "title": "IRONCLAD BAIL BONDS",
+      "body": "Fast paperwork. Open late. No lectures.",
+      "fine": "Ask about weekend processing",
+      "tags": ["arrest", "bail", "crimewave", "grim", "tough", "paperwork"]
+    },
+    {
+      "id": "home_security",
+      "type": "text",
+      "title": "COMMONVILLE HOME SECURITY",
+      "body": "Cameras, alarms, and monitored response. Sleep easier tonight.",
+      "fine": "Free consultation • Local install",
+      "tags": ["fear", "security", "unsolved", "community", "night"]
     }
   ]
 }

@@ -4,19 +4,159 @@
       "id": "lostcat",
       "head": "LOST",
       "textTpl": "Orange cat ‘Marlowe’. Last seen near Block {witnessBlock} apartments.",
-      "tags": ["investigation", "calm"]
+      "tags": ["investigation", "calm", "community", "apartments"]
     },
     {
-      "id": "pawn2",
-      "head": "CASH",
-      "textTpl": "Pawn & trade buzzing near Block {weaponBlock}. Watches, tools, “collectibles”.",
-      "tags": ["arrest", "investigation"]
+      "id": "reward_tip",
+      "head": "REWARD",
+      "textTpl": "Cash reward for credible tips connected to Case File {caseFile}. Leave info at the front desk.",
+      "tags": ["investigation", "unsolved", "fear", "grim"]
     },
     {
       "id": "tow2",
       "head": "TOWING",
       "textTpl": "24/7 towing servicing Block {hotBlock} first. Accidents welcome.",
-      "tags": ["emergency", "night"]
+      "tags": ["emergency", "night", "sirens", "chaos"]
+    },
+    {
+      "id": "pawn2",
+      "head": "CASH",
+      "textTpl": "Pawn & trade buzzing near Block {weaponBlock}. Watches, tools, ‘collectibles’.",
+      "tags": ["arrest", "investigation", "crimewave", "tough", "pawn"]
+    },
+
+    {
+      "id": "hospital_blood_drive",
+      "head": "NOTICE",
+      "textTpl": "Commonville Hospital blood drive today. Walk-ins accepted through 6PM.",
+      "tags": ["community", "relief", "hospital"]
+    },
+    {
+      "id": "security_consult",
+      "head": "SERVICES",
+      "textTpl": "Home security consults available in {neighborhoodB}. Cameras, alarms, lighting.",
+      "tags": ["security", "fear", "night", "community"]
+    },
+    {
+      "id": "bank_safe_deposit",
+      "head": "FINANCE",
+      "textTpl": "Stone Bank & Trust: safe deposit boxes available. Ask about small-business rates.",
+      "tags": ["bank", "paperwork", "community"]
+    },
+    {
+      "id": "coffee_open_late",
+      "head": "OPEN LATE",
+      "textTpl": "Sitz Coffee Shop open late tonight in {neighborhoodA}. Strong coffee, stronger opinions.",
+      "tags": ["coffee", "night", "community", "calm"]
+    },
+    {
+      "id": "donuts_preorder",
+      "head": "FOOD",
+      "textTpl": "Ole’s Donut Shop: pre-orders for early shifts. Call before midnight.",
+      "tags": ["coffee", "community", "calm"]
+    },
+    {
+      "id": "liquor_wanted_papertrail",
+      "head": "WANTED",
+      "textTpl": "Witnesses sought near Snyder’s Liquors. Cash for information. No questions.",
+      "tags": ["night", "crimewave", "tough", "liquor"]
+    },
+
+    {
+      "id": "hotel_rooms",
+      "head": "TRAVEL",
+      "textTpl": "Commonville Hotel: weeknight rates available. Ask about ‘shift worker’ discounts.",
+      "tags": ["hotel", "night", "overtime", "relief"]
+    },
+    {
+      "id": "bar_live_music",
+      "head": "EVENT",
+      "textTpl": "Duffy’s Bar: live music tonight. Please be respectful of neighbors.",
+      "tags": ["bar", "night", "community"]
+    },
+
+    {
+      "id": "warehouse_rental",
+      "head": "FOR RENT",
+      "textTpl": "Storage unit available near {neighborhoodC}. Clean, dry, 24/7 access.",
+      "tags": ["warehouse", "community", "paperwork"]
+    },
+    {
+      "id": "warehouse_help_wanted",
+      "head": "HELP WANTED",
+      "textTpl": "Dock workers needed at a local warehouse. Night shifts. Paid weekly.",
+      "tags": ["warehouse", "night", "tough"]
+    },
+
+    {
+      "id": "apartments_knights",
+      "head": "HOUSING",
+      "textTpl": "Knight’s Apartments: studios and one-beds. Quiet building. Background check required.",
+      "tags": ["apartments", "community", "calm"]
+    },
+    {
+      "id": "apartments_paris",
+      "head": "HOUSING",
+      "textTpl": "Paris Apartments: newly painted units. No loud parties. Call for showing.",
+      "tags": ["apartments", "community"]
+    },
+
+    {
+      "id": "grocery_coupons",
+      "head": "COUPONS",
+      "textTpl": "Patsouras Grocer weekly specials. Clip in-store coupon sheet.",
+      "tags": ["grocery", "community", "calm"]
+    },
+    {
+      "id": "pawn_found_ring",
+      "head": "FOUND",
+      "textTpl": "Ring found near Jake’s Pawnshop. Describe engraving to claim.",
+      "tags": ["pawn", "investigation", "community"]
+    },
+
+    {
+      "id": "paperwork_printing",
+      "head": "SERVICES",
+      "textTpl": "Munder Difflin: bulk forms and fast printing. Keep your case file clean.",
+      "tags": ["paperwork", "community", "investigation"]
+    },
+
+    {
+      "id": "ia_tipline",
+      "head": "NOTICE",
+      "textTpl": "Internal Affairs intake: confidential reports accepted weekdays. Ref: {caseFile}.",
+      "tags": ["internalaffairs", "corruption", "justice"]
+    },
+
+    {
+      "id": "neighborhood_watch",
+      "head": "COMMUNITY",
+      "textTpl": "Neighborhood watch meeting tonight in {neighborhoodA}. Bring a flashlight and your questions.",
+      "tags": ["community", "fear", "unsolved", "calm"]
+    },
+    {
+      "id": "found_keys",
+      "head": "FOUND",
+      "textTpl": "Keys found near Block {witnessBlock}. Describe keychain to claim.",
+      "tags": ["community", "calm", "investigation"]
+    },
+    {
+      "id": "odd_jobs",
+      "head": "HELP WANTED",
+      "textTpl": "Night runner needed — fast pickups across {neighborhoodB}. Reliable vehicle required.",
+      "tags": ["night", "crimewave", "grim", "tough"]
+    },
+    {
+      "id": "babysitter",
+      "head": "SERVICES",
+      "textTpl": "Late-night babysitter available in {neighborhoodC}. References upon request.",
+      "tags": ["community", "night", "relief"]
+    },
+    {
+      "id": "yard_sale",
+      "head": "SALE",
+      "textTpl": "Yard sale in {neighborhoodA}. Tools, lamps, old board games. Early birds welcome.",
+      "tags": ["community", "calm", "relief"]
     }
   ]
 }

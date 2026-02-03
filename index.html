@@ -14,7 +14,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="styles.css?v=v9" />
+  <link rel="stylesheet" href="styles.css?v=v14" />
 </head>
 <body>
   <header class="app-header">
@@ -33,7 +33,7 @@
 
     <div class="brand">
 <button id="homeBadgeBtn" type="button" class="brand-home" aria-label="Go to Home">
-  <img src="badge.png" width="40" alt="Police Precinct Home" />
+  <img src="assets/images/badge.png" width="40" alt="Police Precinct Home" />
 </button>
 
 
@@ -59,7 +59,7 @@
 
 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 50px">
 <div style="flex-shrink: 0; width:60px">
-  <img src="badge.png" style="width: 60px;">
+  <img src="assets/images/badge.png" style="width: 60px;">
 </div>
 
 <div class="hero" style="flex-grow: 1;text-align:center">
@@ -76,7 +76,7 @@
 -->
 
 <div style="flex-shrink: 0; width:60px">
-  <img src="badge.png" style="width: 60px;">
+  <img src="assets/images/badge.png" style="width: 60px;">
 </div>
 </div>
 
@@ -178,6 +178,21 @@ Investigation
           </div>
 
           <div class="card-body">
+
+            <div class="progress-wrap" id="investigationCommWrap">
+              <div class="progress-label">
+                Commendation: <span class="mono" id="investigationCommText">0/3</span>
+              </div>
+<div class="container">
+  <div class="expanding">
+    <div class="progress">
+      <div class="bar" id="investigationCommBar" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="fixed-width">🏅</div>
+</div>
+</div>
+
             <div class="btn-row">
               <button class="btn success segmented" data-action="success" data-cat="investigation" aria-label="Investigation success (clues found)">
                 <span class="seg" data-amount="1">1</span>
@@ -192,21 +207,6 @@ Investigation
               <div>🔎 <span class="mono" id="investigationPoints">0</span></div>
             </div>
 
-            <div class="progress-wrap" id="investigationCommWrap">
-              <div class="progress-label">
-                Commendation: <span class="mono" id="investigationCommText">0/3</span>
-              </div>
-
-<div class="container">
-  <div class="expanding">
-    <div class="progress">
-      <div class="bar" id="investigationCommBar" style="width:0%"></div>
-    </div>
-  </div>
-  <div class="fixed-width">🏅</div>
-</div>
-
-            </div>
           </div>
         </div>
 
@@ -237,6 +237,21 @@ Investigation
           </div>
 
           <div class="card-body">
+
+            <div class="progress-wrap" id="arrestCommWrap">
+              <div class="progress-label">
+                Commendation: <span class="mono" id="arrestCommText">0/4</span>
+              </div>
+<div class="container">
+  <div class="expanding">
+    <div class="progress">
+      <div class="bar" id="arrestCommBar" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="fixed-width">🏅</div>
+</div>
+</div>
+
             <div class="btn-row">
               <button class="btn success segmented" data-action="success" data-cat="arrest" aria-label="Arrest success (thugs removed)">
                 <span class="seg" data-amount="1">1</span>
@@ -252,21 +267,6 @@ Investigation
               <div>👮 <span class="mono" id="arrestPoints">0</span></div>
             </div>
 
-            <div class="progress-wrap" id="arrestCommWrap">
-              <div class="progress-label">
-                Commendation: <span class="mono" id="arrestCommText">0/4</span>
-              </div>
-
-<div class="container">
-  <div class="expanding">
-    <div class="progress">
-      <div class="bar" id="arrestCommBar" style="width:0%"></div>
-    </div>
-  </div>
-  <div class="fixed-width">🏅</div>
-</div>
-
-            </div>
           </div>
         </div>
 
@@ -293,6 +293,21 @@ Investigation
           </div>
 
           <div class="card-body">
+
+            <div class="progress-wrap" id="emergencyCommWrap">
+              <div class="progress-label">
+                Commendation: <span class="mono" id="emergencyCommText">0/5</span>
+              </div>
+<div class="container">
+  <div class="expanding">
+    <div class="progress">
+      <div class="bar" id="emergencyCommBar" style="width:0%"></div>
+    </div>
+  </div>
+<div class="fixed-width">🏅</div>
+</div>
+</div>
+
             <div class="btn-row">
               <button class="btn success" data-action="success" data-cat="emergency">SUCCESS</button>
               <button class="btn danger" data-action="fail" data-cat="emergency">FAIL</button>
@@ -303,31 +318,19 @@ Investigation
               <div>❌ <span class="mono" id="emergencyFail">0</span></div>
             </div>
 
-            <div class="progress-wrap" id="emergencyCommWrap">
-              <div class="progress-label">
-                Commendation: <span class="mono" id="emergencyCommText">0/5</span>
-              </div>
-
-<div class="container">
-  <div class="expanding">
-    <div class="progress">
-      <div class="bar" id="emergencyCommBar" style="width:0%"></div>
-    </div>
-  </div>
-<div class="fixed-width">🏅</div>
-</div>
-
-            
-          </div>
         </div>
       </div>
 
       <footer class="game-footer">
         <div class="footer-left">
-          <button class="btn small" id="btnOpenSettings2">Settings</button>
+
+          <button class="btn small" id="btnOpenSettings2" style="display:none">Settings</button>
+
+          <button class="btn small subtle" id="btnCredits">Credits</button>
+
         </div>
         <div class="footer-right">
-          <div class="tiny muted">v0.2 PWA bones build</div>
+          <div class="tiny muted">version 1.0</div>
         </div>
       </footer>
     </section>
@@ -370,6 +373,6 @@ Investigation
     </div>
   </div>
 
-  <script src="app.js?v=v9"></script>
+  <script src="app.js?v=v14"></script>
 </body>
 </html>

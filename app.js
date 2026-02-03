@@ -26,10 +26,16 @@
   const CONTENT = {
     ads: [],
     classifieds: [],
+    articleTemplates: null,
     dispatches: [],
     commendations: [],
     crises: []
   };
+
+  // Content load guard (helps with edge cases where a saved PWA session
+  // boots into UI before runtime cache is warm, or older state triggers
+  // end-of-shift immediately).
+  let CONTENT_LOADED_ONCE = false;
 
 
   // -------------------------
@@ -77,6 +83,7 @@
   const btnDice = $("#btnDice");
   const btnStartPlayer = $("#btnStartPlayer");
   const btnOpenSettings2 = $("#btnOpenSettings2");
+  const btnCredits = $("#btnCredits");
   const btnQuickAudio = $("#btnQuickAudio");
   const btnHowTo = $("#btnHowTo");
   const btnClearData = $("#btnClearData");
@@ -328,6 +335,11 @@ function showHome() {
       openSettingsModal();
     });
 
+    btnCredits?.addEventListener("click", async () => {
+      await audio.userGestureKick();
+      openCreditsModal();
+    });
+
     btnQuickAudio.addEventListener("click", async () => {
       await audio.userGestureKick();
       openAudioModal();
@@ -386,13 +398,7 @@ function showHome() {
 
     btnEndShift.addEventListener("click", async () => {
       await audio.userGestureKick();
-      openConfirmModal({
-        title: "Ending your shift?",
-        text: "This will end the current game in progress.",
-        confirmText: "End Shift",
-        confirmClass: "warn",
-        onConfirm: () => openEndShiftModal()
-      });
+      openEndShiftConfirmModal();
     });
 
     btnCloseModal.addEventListener("click", () => {
@@ -628,7 +634,7 @@ function showHome() {
     g.activeDispatches.unshift(dispatch);
     g.log.unshift({ t: Date.now(), type: "dispatch", cat, helpful, text: dispatch.text });
 
-    audio.playUi(AUDIO_FILES.dispatch);
+    // audio.playUi(AUDIO_FILES.dispatch);
     dispatchStripAlert();
     openDispatchModal(dispatch);
   }
@@ -1387,16 +1393,32 @@ function openStartingPlayerSelector() {
 
 
   function openSetupModal() {
-    const setup = state.setupDraft || { players: 4, generated: null };
+    const setup = state.setupDraft || { players: 4, dirtyMode: null, generated: null };
+    // Back-compat: older saved drafts won't have dirtyMode.
+    if (!Object.prototype.hasOwnProperty.call(setup, "dirtyMode")) setup.dirtyMode = null;
 
     openModal({
       title: "Setup",
       modalType: "setup",
       bodyHtml: `
         <div class="row">
-          <div class="field">
-            <div class="label">Number of Players</div>
-            <input class="input" id="setupPlayers" type="number" min="1" max="6" value="${setup.players}">
+          <div class="field" style="flex:1;">
+            <div class="label">Players</div>
+            <select class="input" id="setupPlayers">
+              ${[1,2,3,4,5,6].map(n => `<option value="${n}" ${Number(setup.players)===n?"selected":""}>${n}</option>`).join("")}
+            </select>
+          </div>
+
+          <div class="field" style="flex:1;">
+            <div class="label">Dirty Cop</div>
+            <select class="input" id="setupDirty">
+              <option value="" ${!setup.dirtyMode ? "selected" : ""}>None (0 Dirty Cops)</option>
+              <option value="1" ${setup.dirtyMode==="1" ? "selected" : ""}>1 Dirty Cop</option>
+              <option value="likely1" ${setup.dirtyMode==="likely1" ? "selected" : ""}>Likely 1 Dirty Cop</option>
+              <option value="2" ${setup.dirtyMode==="2" ? "selected" : ""}>2 Dirty Cops</option>
+              <option value="likely2" ${setup.dirtyMode==="likely2" ? "selected" : ""}>Likely 2 Dirty Cops</option>
+              <option value="ia" ${setup.dirtyMode==="ia" ? "selected" : ""}>Internal Affairs Free-For-All</option>
+            </select>
           </div>
         </div>
 
@@ -1411,15 +1433,66 @@ function openStartingPlayerSelector() {
       footerButtons: [{ text: "Done", className: "btn primary", onClick: closeModal }],
       onOpen: () => {
         const playersEl = $("#setupPlayers");
+        const dirtyEl = $("#setupDirty");
         const resultsEl = $("#setupResults");
+
+        const loyaltyText = (players, dirtyMode) => {
+          const p = clampInt(players, 1, 6);
+          const mode = dirtyMode || null;
+
+          if (!mode) return `No Loyalty Cards (0 Dirty Cops).`;
+          if (mode === "1") return `Use <b>${p}</b> Loyalty Cards total, including <b>1</b> Dirty Cop.`;
+          if (mode === "likely1") return `Use <b>${p + 1}</b> Loyalty Cards total, including <b>1</b> Dirty Cop.`;
+          if (mode === "2") return `Use <b>${p}</b> Loyalty Cards total, including <b>2</b> Dirty Cops.`;
+          if (mode === "likely2") return `Use <b>${p + 2}</b> Loyalty Cards total, including <b>2</b> Dirty Cops.`;
+          if (mode === "ia") return `Use <b>ALL</b> Loyalty Cards (entire deck), regardless of player count.`;
+          return `No Loyalty Cards (0 Dirty Cops).`;
+        };
+
+        const setupNumbers = (players, dirtyMode) => {
+          const p = clampInt(players, 1, 6);
+          const base = setupRow(p);
+          const mode = dirtyMode || null;
+
+          // Overrides only apply for the Dirty Cop variants called out in the rules.
+          // (Internal Affairs mode uses normal setup numbers unless you later define a special table.)
+          const isOne = (mode === "1" || mode === "likely1");
+          const isTwo = (mode === "2" || mode === "likely2");
+
+          // Defaults
+          let policeCards = base.policeCards;
+          let punkPool = base.punkPool;
+          let calendarStart = base.calendarStart;
+          let patrolOfficers = null;
+
+          // Variant table (only where explicitly defined)
+          if (p === 3 && isOne) {
+            policeCards = 6; punkPool = 17; calendarStart = "8th"; patrolOfficers = 5;
+          } else if (p === 4 && isOne) {
+            policeCards = 6; punkPool = 16; calendarStart = "12th"; patrolOfficers = 4;
+          } else if (p === 4 && isTwo) {
+            policeCards = 7; punkPool = 17; calendarStart = "12th"; patrolOfficers = 5;
+          } else if (p === 5 && isOne) {
+            policeCards = 5; punkPool = 16; calendarStart = "14th"; patrolOfficers = 4;
+          } else if (p === 5 && isTwo) {
+            policeCards = 6; punkPool = 17; calendarStart = "14th"; patrolOfficers = 5;
+          } else if (p === 6 && isOne) {
+            policeCards = 4; punkPool = 15; calendarStart = "15th"; patrolOfficers = 4;
+          } else if (p === 6 && isTwo) {
+            policeCards = 5; punkPool = 16; calendarStart = "15th"; patrolOfficers = 5;
+          }
+
+          return { policeCards, punkPool, calendarStart, patrolOfficers };
+        };
 
         const renderSetup = (gen) => {
           if (!gen) {
-            resultsEl.innerHTML = `<div class="item"><div class="item-text">Adjust <b>Number of Players</b> to generate setup instructions.</div></div>`;
+            resultsEl.innerHTML = `<div class="item"><div class="item-text">Adjust <b>Players</b> or <b>Dirty Cop</b> to generate setup instructions.</div></div>`;
             return;
           }
 
           const punksByBlock = gen.punksByBlock;
+          const nums = setupNumbers(setup.players, setup.dirtyMode);
 
           resultsEl.innerHTML = `
             <div class="item">
@@ -1438,27 +1511,39 @@ function openStartingPlayerSelector() {
             </div>
 
             <div class="item">
-              <div class="item-title">3) Deal Police Cards</div>
-              <div class="item-text">Deal <b>${calcPoliceCards(setup.players)}</b> Police Cards to each player.</div>
+              <div class="item-title">3) Loyalty Cards</div>
+              <div class="item-text">${loyaltyText(setup.players, setup.dirtyMode)}</div>
             </div>
 
             <div class="item">
-              <div class="item-title">4) Punk Pool</div>
-              <div class="item-text">Add <b>${calcPunkPool(setup.players)}</b> Punk Tokens to pool (return rest to box).</div>
+              <div class="item-title">4) Deal Police Cards</div>
+              <div class="item-text">Deal <b>${nums.policeCards}</b> Police Cards face-down to each player.</div>
             </div>
 
             <div class="item">
-              <div class="item-title">5) Calendar Marker</div>
-              <div class="item-text">Start Calendar Marker on <b>${calcCalendarStart(setup.players)}</b>.</div>
+              <div class="item-title">5) Punk Pool</div>
+              <div class="item-text">Add <b>${nums.punkPool}</b> Punk Tokens to pool (return rest to box).</div>
             </div>
 
             <div class="item">
-              <div class="item-title">6) Emergency Cards</div>
+              <div class="item-title">6) Calendar Marker</div>
+              <div class="item-text">Start Calendar Marker on <b>${nums.calendarStart}</b>.</div>
+            </div>
+
+            ${nums.patrolOfficers ? `
+              <div class="item">
+                <div class="item-title">7) Patrol Officer Pool</div>
+                <div class="item-text">Add <b>${nums.patrolOfficers}</b> Patrol Officers to pool.</div>
+              </div>
+            ` : ""}
+
+            <div class="item">
+              <div class="item-title">${nums.patrolOfficers ? "8" : "7"}) Emergency Cards</div>
               <div class="item-text">Draw <b>2</b> Emergency cards.</div>
             </div>
 
             <div class="item">
-              <div class="item-title">7) Place 6 Punks</div>
+              <div class="item-title">${nums.patrolOfficers ? "9" : "8"}) Place 6 Punks</div>
               <div class="item-text">
                 ${Object.keys(punksByBlock).sort().map(k => `Block ${k}: <b>${punksByBlock[k]}</b>`).join("<br/>")}
                 <br/><span class="muted tiny">(Max 3 per block enforced)</span>
@@ -1466,35 +1551,37 @@ function openStartingPlayerSelector() {
             </div>
 
             <div class="item">
-              <div class="item-title">8) Choose Characters</div>
+              <div class="item-title">${nums.patrolOfficers ? "10" : "9"}) Choose Characters</div>
               <div class="item-text">Players select a character card.</div>
             </div>
           `;
         };
 
-
-        // Auto-generate rolls whenever the player count changes.
-        let lastPlayers = null;
+        // Auto-generate rolls whenever Players or Dirty Cop changes.
+        let lastKey = null;
         const generate = (force=false) => {
           const p = clampInt(playersEl.value, 1, 6);
-          if (!force && p === lastPlayers) return;
+          const dirty = dirtyEl.value || null;
+          const key = `${p}|${dirty || ""}`;
 
-          lastPlayers = p;
+          if (!force && key === lastKey) return;
+          lastKey = key;
+
           setup.players = p;
+          setup.dirtyMode = dirty;
           setup.generated = generateSetupRolls();
           state.setupDraft = setup;
           saveState();
           renderSetup(setup.generated);
         };
 
-        // Re-roll keeps the same player count.
+        // Re-roll keeps the same selections.
         $("#btnReRollSetup").addEventListener("click", () => generate(true));
 
-        // When players change, regenerate immediately.
-        playersEl.addEventListener("input", () => generate(false));
         playersEl.addEventListener("change", () => generate(false));
+        dirtyEl.addEventListener("change", () => generate(false));
 
-        // On open, always show generated setup based on current players.
+        // On open, always show generated setup based on current selections.
         generate(true);
       }
     });
@@ -1667,6 +1754,63 @@ function openStartingPlayerSelector() {
     });
   }
 
+  function openCreditsModal() {
+    // Keep links here so they can be updated in one place.
+    const koFiUrl = "https://ko-fi.com/randyd426";
+    const issuesUrl = "https://github.com/randysd/PolicePrecinct/issues";
+
+    openModal({
+      title: "Credits",
+      modalType: "credits",
+      bodyHtml: `
+        <div class="list credits-list">
+
+          <div class="item">
+            <div class="item-title">Police Precinct</div>
+            <div class="item-text">
+              This is a fan-made companion app created out of love for the board game <b>Police Precinct</b>.
+              Special thanks to <b>Ole Steiness</b> (designer) and <b>Common Man Games</b> (publisher) for creating
+              such a memorable game — and to the community of fans for keeping interest in it alive.
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="item-title">IP / Disclaimer</div>
+            <div class="item-text">
+              Police Precinct and related names, logos, and game content referenced in this app are the property of
+              their respective owners and may be protected by copyright and/or trademark.
+              This app is <b>not affiliated with</b>, endorsed by, or sponsored by <b>Common Man Games</b> or <b>Ole Steiness</b>.
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="item-title">Feedback / Bug Reports</div>
+            <div class="item-text">
+              Found a bug or have an idea? Please share it so the app can keep improving.
+            </div>
+            <div class="credits-actions">
+              <a class="btn small primary" role="button" href="${issuesUrl}" target="_blank" rel="noopener">GitHub Issues</a>
+              <a class="btn small" role="button" href="mailto:rdykstra1@yahoo.com?subject=Police%20Precinct%20App%20Feedback">Email</a>
+            </div>
+          </div>
+
+          <div class="item donate">
+            <div class="item-title">Support Development</div>
+            <div class="item-text">
+              If you enjoy the app and want to support future updates (and future board game projects), donations are appreciated.
+              Donations are optional and do not unlock features.
+            </div>
+            <div class="credits-actions">
+              <a class="btn small success" role="button" href="${koFiUrl}" target="_blank" rel="noopener">Support on Ko-fi</a>
+            </div>
+          </div>
+
+        </div>
+      `,
+      footerButtons: [{ text: "Close", className: "btn primary", onClick: closeModal }]
+    });
+  }
+
   function openActionHelp(cat) {
     const k = String(cat || "").toLowerCase();
     const title = k === "investigation" ? "Investigation" : k === "arrest" ? "Arrest" : "Emergency";
@@ -1762,44 +1906,66 @@ function openStartingPlayerSelector() {
     });
   }
 
-  function openEndShiftModal() {
+  // Shift Report (newsprint recap). Outcome is chosen in the "Ending your shift?" dialog.
+  // This modal is always read-only for outcome/reason.
+  function openEndShiftModal(presetOutcome=null, presetReason=null) {
     audio.setMode("ending");
 
     const g = state.game;
     if (!g) return;
 
+    // Back-compat: allow callers without explicit args (older flows),
+    // but prefer the already-selected outcome/reason stored on the game.
+    const hasPreset = true;
+    const finalOutcome = presetOutcome || g.outcome || g.endOutcome || "loss";
+    const finalReason = presetReason || g.reason || g.endReason || "crime_track_max";
+
     openModal({
       title: "Shift Report",
       modalType: "endShift",
       bodyHtml: `
-      <div class="item">
+      <div class="item" style="display: none">
         <div class="item-title">Outcome</div>
         <div class="row">
           <div class="field">
             <div class="label">Result</div>
-            <select class="select" id="endOutcome">
-              <option value="win">Win</option>
-              <option value="loss">Loss</option>
-            </select>
+            <div class="value" id="endOutcomeLabel"></div>
           </div>
-
           <div class="field">
             <div class="label">Reason</div>
-            <select class="select" id="endReason"></select>
+            <div class="value" id="endReasonLabel"></div>
           </div>
         </div>
       </div>
 
       <div class="newsprint" id="newsprint">
-        <div class="newsprint-paper">THE PRECINCT TIMES</div>
+        <div class="newsprint-paper" id="npPaperTitle">THE COMMONVILLE GAZETTE</div>
       
         <div class="newsprint-masthead" id="npMasthead"></div>
         <div class="newsprint-dateline" id="npDateline"></div>
+        <div class="newsprint-grid">
+          <div class="newsprint-main">
+            <div class="newsprint-headline" id="npHeadline"></div>
+            <div class="newsprint-subhead" id="npSubhead"></div>
+            <div class="newsprint-body" id="npBody"></div>
+          </div>
+
+          <aside class="newsprint-sidebar">
+            <div class="np-box">
+              <div class="np-box-title">POLICE BLOTTER</div>
+              <ul class="np-bullets" id="npBlotter"></ul>
+            </div>
+
+            <div class="np-box hidden" id="npAsideBox">
+              <div class="np-box-title">EDITOR'S NOTE</div>
+              <div class="np-aside" id="npAside"></div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Ads + classifieds belong at the bottom of the article -->
         <div class="newsprint-ads" id="npAds"></div>
         <div class="newsprint-classifieds" id="npClassifieds"></div>
-        <div class="newsprint-headline" id="npHeadline"></div>
-        <div class="newsprint-subhead" id="npSubhead"></div>
-        <div class="newsprint-body" id="npBody"></div>
       </div>
     `,
       footerButtons: [
@@ -1809,9 +1975,7 @@ function openStartingPlayerSelector() {
           text: "End & Return Home",
           className: "btn warn",
           onClick: () => {
-            const outcome = $("#endOutcome").value;
-            const reason = $("#endReason").value;
-            endGame(outcome, reason);
+            endGame(finalOutcome, finalReason);
             closeModal();
             audio.setMode("none");
             location.hash = "#/home";
@@ -1819,8 +1983,107 @@ function openStartingPlayerSelector() {
         }
       ],
       onOpen: () => {
-        const outcomeEl = $("#endOutcome");
-        const reasonEl = $("#endReason");
+        // Render the read-only labels and article.
+        const outcomeLabel = finalOutcome === "win" ? "Win" : "Loss";
+        const reasonLabel = humanizeEndReason(finalOutcome, finalReason);
+        const outEl = $("#endOutcomeLabel");
+        const reaEl = $("#endReasonLabel");
+        if (outEl) outEl.textContent = outcomeLabel;
+        if (reaEl) reaEl.textContent = reasonLabel;
+        (async () => {
+          await renderNewspaperArticle(finalOutcome, finalReason);
+        })();
+      }
+    });
+
+    function buildArticleText() {
+      const outcome = finalOutcome;
+      const reason = finalReason;
+      const article = buildNewspaperArticle(outcome, reason);
+      return `${article.headline}\n\n${article.subhead}\n\n${article.body.join("\n\n")}`;
+    }
+  }
+
+  function humanizeEndReason(outcome, reason) {
+    const isWin = outcome === "win";
+    const mapWin = {
+      caught_before_appeared: "Caught murderer before he appeared",
+      caught_after_appeared: "Caught murderer after he appeared"
+    };
+    const mapLoss = {
+      crime_track_max: "Crime track reached the end",
+      murderer_escaped: "Murderer escaped / not captured"
+    };
+    return (isWin ? mapWin : mapLoss)[reason] || String(reason || "");
+  }
+
+  function openEndShiftConfirmModal() {
+    const g = state.game;
+    if (!g?.active) return;
+
+    openModal({
+      title: "Ending your shift?",
+      modalType: "endShiftConfirm",
+      bodyHtml: `
+        <div class="item">
+          <div class="item-text">This will end the current game in progress. Choose your result and how it ended.</div>
+        </div>
+        <div class="item">
+          <div class="item-title">Outcome</div>
+          <div class="row">
+            <div class="field">
+              <div class="label">Result</div>
+              <select class="select" id="endConfirmOutcome">
+                <option value="win">Win</option>
+                <option value="loss">Loss</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="label">Reason</div>
+              <select class="select" id="endConfirmReason"></select>
+            </div>
+          </div>
+        </div>
+      `,
+      footerButtons: [
+        { text: "Cancel", className: "btn", onClick: closeModal },
+        {
+          text: "End Shift",
+          className: "btn warn",
+          onClick: () => {
+            const outcome = $("#endConfirmOutcome")?.value || "loss";
+            const reason = $("#endConfirmReason")?.value || "crime_track_max";
+
+            // Persist the ending selection + a derived tone profile so the report,
+            // ad selection, and classifieds can reflect how the shift actually ended.
+            try {
+              const g = state.game;
+              if (g) {
+                g.endOutcome = outcome;
+                g.endReason = reason;
+                g.reportTone = buildToneProfile(outcome, reason, g);
+                // Build a stable, end-of-run snapshot for the report. This prevents
+                // the newspaper from changing if the user re-opens the Shift Report later.
+                g.reportSummary = buildEndgameSummary(outcome, reason, g);
+                // Build the article once to emit narrative hooks, then use those hooks
+                // to choose ads/classifieds that feel intentionally placed.
+                buildNewspaperArticle(outcome, reason);
+                // Refresh endgame extras now so the report is instantly populated.
+                g.selectedAds = pickAdsForReport();
+                g.selectedClassifieds = pickClassifiedsForReport();
+                saveState();
+              }
+            } catch (e) {
+              console.warn("Failed to build endgame tone", e);
+            }
+            closeModal();
+            openEndShiftModal(outcome, reason);
+          }
+        }
+      ],
+      onOpen: () => {
+        const outcomeEl = $("#endConfirmOutcome");
+        const reasonEl = $("#endConfirmReason");
 
         const setReasonOptions = () => {
           const isWin = outcomeEl.value === "win";
@@ -1829,7 +2092,6 @@ function openStartingPlayerSelector() {
             { v: "caught_after_appeared", t: "Caught murderer after he appeared" }
           ] : [
             { v: "crime_track_max", t: "Crime track reached the end" },
-            { v: "calendar_ran_out", t: "Calendar ran out" },
             { v: "murderer_escaped", t: "Murderer escaped / not captured" }
           ];
 
@@ -1842,25 +2104,14 @@ function openStartingPlayerSelector() {
           });
         };
 
-        const render = () => renderNewspaperArticle(outcomeEl.value, reasonEl.value);
-
-        outcomeEl.addEventListener("change", () => { setReasonOptions(); render(); });
-        reasonEl.addEventListener("change", render);
-
+        outcomeEl.addEventListener("change", setReasonOptions);
         setReasonOptions();
-        render();
       }
     });
-
-    function buildArticleText() {
-      const outcome = $("#endOutcome").value;
-      const reason = $("#endReason").value;
-      const article = buildNewspaperArticle(outcome, reason);
-      return `${article.headline}\n\n${article.subhead}\n\n${article.body.join("\n\n")}`;
-    }
   }
 
   function openDispatchModal(dispatch, fromStrip=false) {
+    audio.playUi(AUDIO_FILES.dispatch);
     openModal({
       title: "Radio Dispatch",
       modalType: "dispatch",
@@ -2530,7 +2781,11 @@ function setBeginShiftButton(isActive) {
 
   async function loadJson(url, fallback) {
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      // IMPORTANT:
+      // Do not use cache:"no-store" here.
+      // In PWAs, a Request with cache:"no-store" often fails to match the Service Worker cache,
+      // which can cause offline/installed sessions to load EMPTY content (no ads/classifieds).
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       return await res.json();
     } catch (e) {
@@ -2543,12 +2798,16 @@ function setBeginShiftButton(isActive) {
     // Minimal fallbacks (so app still runs even if files missing)
     const empty = { items: [] };
 
-    const [ads, classifieds, dispatches, commendations, crises] = await Promise.all([
+    // Article templates fallback (so the endgame report stays readable even if the file is missing).
+    const defaultTemplates = getDefaultArticleTemplates();
+
+    const [ads, classifieds, dispatches, commendations, crises, articleTemplates] = await Promise.all([
       loadJson("./assets/data/ads.json", empty),
       loadJson("./assets/data/classifieds.json", empty),
       loadJson("./assets/data/dispatches.json", empty),
       loadJson("./assets/data/commendations.json", empty),
-      loadJson("./assets/data/crises.json", empty)
+      loadJson("./assets/data/crises.json", empty),
+      loadJson("./assets/data/article_templates.json", defaultTemplates)
     ]);
 
     CONTENT.ads = ads.items || [];
@@ -2556,6 +2815,26 @@ function setBeginShiftButton(isActive) {
     CONTENT.dispatches = dispatches.items || [];
     CONTENT.commendations = commendations.items || [];
     CONTENT.crises = crises.items || [];
+    CONTENT.articleTemplates = articleTemplates || defaultTemplates;
+
+    // Robust fallbacks:
+    // In some installed PWA states (or when a JSON fetch is blocked/old cache),
+    // content lists can come back empty. Never let the endgame newspaper render
+    // with "No inventory available" if we have built-in pools.
+    if (!CONTENT.ads.length && Array.isArray(AD_POOL) && AD_POOL.length) {
+      CONTENT.ads = [...AD_POOL];
+    }
+    if (!CONTENT.classifieds.length && Array.isArray(CLASSIFIEDS_POOL) && CLASSIFIEDS_POOL.length) {
+      // Normalize pool shape to match JSON items.
+      CONTENT.classifieds = CLASSIFIEDS_POOL.map(c => ({
+        id: c.id,
+        head: c.head,
+        textTpl: c.textTpl || c.text,
+        tags: c.tags || []
+      }));
+    }
+
+    CONTENT_LOADED_ONCE = true;
 
     // Optional: quick sanity log
     console.log("Content loaded:", {
@@ -2563,7 +2842,8 @@ function setBeginShiftButton(isActive) {
       classifieds: CONTENT.classifieds.length,
       dispatches: CONTENT.dispatches.length,
       commendations: CONTENT.commendations.length,
-      crises: CONTENT.crises.length
+      crises: CONTENT.crises.length,
+      articleTemplates: !!CONTENT.articleTemplates
     });
   }
 
@@ -2607,6 +2887,158 @@ function setBeginShiftButton(isActive) {
     return { weaponBlock, witnessBlock, hotBlock };
   }
 
+  function getDefaultArticleTemplates() {
+    return {
+      masthead: {
+        title: "THE COMMONVILLE GAZETTE",
+        tagline: "Serving Commonville Since 1898"
+      },
+      mastheads: [
+        "FROM THE POLICE BEAT",
+        "COMMONVILLE POLICE BLOTTER",
+        "GAZETTE SPECIAL REPORT"
+      ],
+      kickers: [
+        "Gazette Desk",
+        "By Staff Writer",
+        "City Desk"
+      ],
+      headline: {
+        win: [
+          "COMMONVILLE BREATHES AGAIN AFTER SUSPECT TAKEN INTO CUSTODY",
+          "LONG NIGHT ENDS WITH ARREST IN COMMONVILLE",
+          "PRECINCT BREAKS CASE AFTER TENSE SHIFT"
+        ],
+        loss_unsolved: [
+          "SUSPECT SLIPS AWAY AS LEADS RUN COLD",
+          "COMMONVILLE LEFT WAITING AFTER CASE STALLS",
+          "QUESTIONS LINGER FOLLOWING INCONCLUSIVE SHIFT"
+        ],
+        loss_crimewave: [
+          "SIRENS DOMINATE THE NIGHT AS CALLS OVERWHELM PRECINCT",
+          "COMMONVILLE STRETCHED THIN DURING CHAOTIC SHIFT",
+          "CITY REELS AFTER RELENTLESS RUN OF INCIDENTS"
+        ]
+      },
+      subhead: {
+        excellent: [
+          "A decisive shift brought clear results and a noticeable sense of relief across {neighborhoodA} and beyond.",
+          "Steady police work kept pressure on throughout the night as Commonville finally found room to breathe."
+        ],
+        strong: [
+          "Coordinated efforts paid off after hours of tense activity across {neighborhoodA}, {neighborhoodB}, and nearby blocks.",
+          "Responders kept their footing through a demanding run of calls, maintaining control where it counted."
+        ],
+        mixed: [
+          "Moments of progress were tempered by mounting challenges as the shift moved across the city.",
+          "An uneven night tested officers across multiple fronts, with momentum shifting more than once."
+        ],
+        struggling: [
+          "Limited resources and mounting calls complicated the response as pressure rose across {neighborhoodB}.",
+          "The department faced an uphill battle from the outset, with little time to reset between incidents."
+        ],
+        dire: [
+          "A difficult night left the city uneasy, with the radio rarely quiet and answers hard to come by.",
+          "Commonville felt the strain as officers fought to keep pace with a punishing run of activity."
+        ]
+      },
+      body: {
+        opening: [
+          "What began as a routine shift quickly took on added urgency as events unfolded across Commonville.",
+          "Officers found themselves navigating a rapidly evolving situation as calls came in from {neighborhoodA} to {neighborhoodC}.",
+          "The tone of the shift shifted early as circumstances refused to settle."
+        ],
+        focus_investigation: [
+          "Investigators worked methodically, following threads wherever they led and refusing to let promising leads slip away.",
+          "Detectives leaned heavily on legwork and intuition, piecing together fragments as the night wore on."
+        ],
+        focus_arrest: [
+          "Arrests came through assertive action, with officers moving quickly when opportunities presented themselves.",
+          "Street units played a decisive role, stepping in repeatedly to bring volatile situations under control."
+        ],
+        focus_emergency: [
+          "Emergency calls demanded immediate attention, forcing rapid decisions under mounting pressure.",
+          "First responders were stretched across the city, juggling urgent situations back-to-back."
+        ],
+        pressure_calm: [
+          "Despite the activity, the shift maintained a measured pace for much of the night.",
+          "For long stretches, the city held its breath rather than erupting."
+        ],
+        pressure_busy: [
+          "The night moved in waves, with brief lulls giving way to fresh bursts of radio traffic.",
+          "Units cycled through calls with little downtime, keeping the city from tipping too far."
+        ],
+        pressure_chaotic: [
+          "Radio chatter rarely quieted, with officers bouncing from one urgent call to the next.",
+          "As the night wore on, the sense of urgency only intensified."
+        ]
+      },
+      closing: {
+        win: [
+          "By the end of the shift, relief was evident as the case reached its conclusion.",
+          "When the dust settled, officers could finally step back knowing their efforts had paid off."
+        ],
+        loss: [
+          "As the shift drew to a close, unanswered questions remained.",
+          "The night ended without clear resolution, leaving the city waiting for what comes next."
+        ]
+      },
+      editorial_asides: {
+        tough: [
+          "The Gazette notes that consistent follow-through — not luck — is what keeps a city safe when the night turns sharp.",
+          "Calls for stronger coordination across precinct resources have grown louder among residents."
+        ],
+        community: [
+          "Residents are reminded to report tips promptly; small details can matter when a case tightens late in the night.",
+          "City officials urged patience and cooperation as investigators continue their work."
+        ],
+        skeptical: [
+          "Some neighbors questioned whether the city’s fragmented response can keep pace when a case refuses to break.",
+          "Public confidence tends to fray when timelines stretch and answers remain scarce."
+        ],
+        supportive: [
+          "Veteran observers noted that even disciplined crews can be overwhelmed when calls stack faster than units can clear them.",
+          "Officials emphasized that recovery begins with rest, regrouping, and learning from the night’s pressure."
+        ],
+        ia: [
+          "Internal Affairs sources indicated that procedure reviews remain ongoing in sensitive cases.",
+          "The Gazette encourages transparency and documentation whenever questions of conduct arise."
+        ],
+        default: [
+          "Officials declined to comment on specifics, citing the ongoing nature of the case.",
+          "Residents were urged to remain vigilant."
+        ]
+      },
+      blotter: {
+        default: [
+          "{district} — Residents reported a disturbance; units cleared the scene without further incident.",
+          "{district} — Patrol presence increased following multiple late-night complaints.",
+          "{district} — A brief traffic stop caused delays before the roadway reopened."
+        ],
+        win: [
+          "{district} — Officers confirmed an arrest following a late-breaking lead.",
+          "{district} — A coordinated response brought a tense situation under control."
+        ],
+        loss: [
+          "{district} — Calls continued into the late hours as residents reported concerns.",
+          "{district} — Units canvassed the area after reports of suspicious activity."
+        ],
+        investigation: [
+          "{district} — Detectives followed up on tips as neighbors shared details from earlier in the day.",
+          "{district} — Investigators canvassed nearby businesses for additional information."
+        ],
+        arrest: [
+          "{district} — One individual was taken into custody following a brief pursuit.",
+          "{district} — Officers responded to a disorderly conduct call; situation stabilized."
+        ],
+        emergency: [
+          "{district} — Medical response requested; EMS assisted on scene.",
+          "{district} — Fire/medical call resolved; residents advised to avoid the area temporarily."
+        ]
+      }
+    };
+  }
+
   function applyTemplate(tpl, ctx) {
     if (!tpl) return "";
     return String(tpl).replace(/\{(\w+)\}/g, (_, key) => {
@@ -2646,38 +3078,97 @@ function setBeginShiftButton(isActive) {
     const host = $("#npClassifieds");
     if (!host) return;
 
-    const items = g?.selectedClassifieds || [];
+    const raw = g?.selectedClassifieds || [];
+    const items = Array.isArray(raw) ? raw : [];
     if (!items.length) {
-      host.innerHTML = "";
+      // Always show something so the paper doesn't look broken.
+      host.innerHTML = `
+        <div class="classifieds-title">Classifieds</div>
+        <div class="classifieds-grid">
+          <div class="classified"><b>NOTICE</b> — No classifieds available.</div>
+        </div>
+      `;
       return;
     }
 
     host.innerHTML = `
-    <div class="classifieds-title">Classifieds</div>
-    <div class="classifieds-grid">
-      ${items.map(x => `
-        <div class="classified"><b>${escapeHtml(x.head)}</b> — ${escapeHtml(x.text)}</div>
-      `).join("")}
-    </div>
-  `;
+      <div class="classifieds-title">Classifieds</div>
+      <div class="classifieds-grid">
+        ${items.map(x => {
+          const head = x?.head || x?.label || "NOTICE";
+          const text = x?.text || x?.body || x?.textTpl || "";
+          return `<div class="classified"><b>${escapeHtml(head)}</b> — ${escapeHtml(text)}</div>`;
+        }).join("")}
+      </div>
+    `;
   }
 
   function pickClassifiedsForReport() {
     const g = state.game;
     if (!g) return [];
 
-    const ctx = getReportContext();
+    // Classifieds can reference both board-flavor (blocks) and narrative flavor (districts/caseFile).
+    const baseCtx = (state.game?.reportSummary?.ctx) || {};
+    const ctx = { ...getReportContext(), ...baseCtx };
 
     const focus = getGameFocusProfile(g);
+    const sum = g.reportSummary || null;
     const count = randInt(3, 6);
+
+    const toneW = g.reportTone?.tagWeights || null;
+    const bestKey = sum?.best?.k || null;
+    const worstKey = sum?.worst?.k || null;
+    const intensity = sum?.intensity || null;
+    const perf = sum?.ctx?.performanceKey || null;
+    const voice = sum?.ctx?.voiceKey || null;
+
+    const hookSet = new Set(Array.isArray(g.reportHooks || sum?.ctx?.hooks) ? (g.reportHooks || sum?.ctx?.hooks).filter(Boolean) : []);
 
     const weighted = CONTENT.classifieds.map(c => {
       let w = 1;
       const tags = c.tags || [];
       if (tags.includes(focus.primary)) w += 2.5;
       if (tags.includes(focus.secondary)) w += 1.2;
+      if (bestKey && tags.includes(bestKey)) w += 0.8;
+      if (worstKey && tags.includes(worstKey)) w += 1.6;
+      if (intensity === "chaos") {
+        if (tags.includes("crimewave")) w += 0.8;
+        if (tags.includes("sirens")) w += 0.6;
+        if (tags.includes("night")) w += 0.4;
+      } else if (intensity === "calm") {
+        if (tags.includes("calm")) w += 0.7;
+        if (tags.includes("community")) w += 0.4;
+      }
+      if (perf === "dire" || perf === "struggling") {
+        if (tags.includes("grim")) w += 0.6;
+        if (tags.includes("fear")) w += 0.5;
+        if (tags.includes("unsolved")) w += 0.5;
+      }
+      if (perf === "excellent" || perf === "strong") {
+        if (tags.includes("victory")) w += 0.5;
+        if (tags.includes("relief")) w += 0.4;
+      }
+      if (voice) {
+        if (voice === "ia" && tags.includes("internalaffairs")) w += 0.8;
+        if (voice === "tough" && tags.includes("tough")) w += 0.4;
+        if (voice === "community" && tags.includes("community")) w += 0.4;
+      }
       if (tags.includes("night") && focus.intensity > 0.35) w += 0.7;
       if (tags.includes("calm") && focus.intensity < 0.25) w += 0.6;
+      if (toneW) {
+        for (const t of tags) {
+          const boost = toneW[t];
+          if (boost) w += 0.5 * boost;
+        }
+      }
+
+      // Narrative hooks (same idea as ads): the article text can hint at "paperwork", "coffee",
+      // "injury", "security", etc. When that happens, classifieds that share those tags are more likely.
+      if (hookSet.size) {
+        for (const t of tags) {
+          if (hookSet.has(t)) { w += 1.1; break; }
+        }
+      }
       return { item: c, weight: Math.max(0.2, w) };
     });
 
@@ -2733,10 +3224,70 @@ function setBeginShiftButton(isActive) {
     return { primary, secondary, intensity };
   }
 
-  function buildWeightedAdPool(focus) {
+  function buildToneProfile(outcome, reason, g) {
+    // Returns a { tagWeights } map. This drives endgame ads/classifieds + flavor text.
+    // Keep it small + explainable.
+    const w = Object.create(null);
+    const add = (tag, amt = 1) => {
+      if (!tag) return;
+      w[tag] = (w[tag] || 0) + amt;
+    };
+
+    const isWin = outcome === "win";
+    add(isWin ? "victory" : "grim", 2);
+
+    // Ending reason tags
+    if (isWin) {
+      add("justice", 1);
+      add("manhunt", 2);
+      if (reason === "caught_before_appeared") add("swift", 1);
+      if (reason === "caught_after_appeared") add("overtime", 1);
+    } else {
+      if (reason === "crime_track_max") {
+        add("crimewave", 2);
+        add("overrun", 1);
+      }
+      if (reason === "murderer_escaped") {
+        add("unsolved", 2);
+        add("fear", 1);
+      }
+    }
+
+    // Gameplay performance tags
+    const overall = getOverallRate();
+    const overallPct = Math.round(overall * 100);
+    if (overallPct >= 75) add("competent", 1);
+    if (overallPct <= 45) add("struggling", 1);
+
+    const focus = getGameFocusProfile(g);
+    add(focus.primary, 2);
+    add(focus.secondary, 1);
+    if (focus.intensity > 0.5) add("sirens", 1);
+    if (focus.intensity < 0.25) add("quiet", 1);
+
+    // Dirty cop / IA flavor (if enabled in setup)
+    const dc = state.setupDraft?.dirtyMode || null;
+    if (dc) {
+      if (dc === "1" || dc === "likely1" || dc === "2" || dc === "likely2") add("corruption", 1);
+      if (dc === "ia") add("internalaffairs", 2);
+    }
+
+    return { tagWeights: w };
+  }
+
+  function buildWeightedAdPool(focus, tone, sum, hooks) {
     // Base weight for all ads, then boost by category tags
     // Add tags to ads in the AD_POOL (shown below)
     const out = [];
+
+    const toneW = tone?.tagWeights || null;
+    const bestKey = sum?.best?.k || null;
+    const worstKey = sum?.worst?.k || null;
+    const intensity = sum?.intensity || null; // calm | steady | chaos
+    const perf = sum?.ctx?.performanceKey || null; // excellent | strong | mixed | struggling | dire
+    const voice = sum?.ctx?.voiceKey || null; // community | tough | supportive | skeptical | ia
+
+    const hookSet = new Set(Array.isArray(hooks) ? hooks.filter(Boolean) : []);
 
     for (const ad of CONTENT.ads) {
       let w = 1;
@@ -2747,9 +3298,63 @@ function setBeginShiftButton(isActive) {
       if (tags.includes(focus.primary)) w += 3;
       if (tags.includes(focus.secondary)) w += 1.5;
 
+      // Narrative “best/worst” — helps match ads to the *story* of the shift.
+      if (bestKey && tags.includes(bestKey)) w += 1.0;
+      if (worstKey && tags.includes(worstKey)) w += 2.0;
+
+      // Intensity nudges (chaos prefers sirens/crimewave/night; calm prefers community/coffee)
+      if (intensity === "chaos") {
+        if (tags.includes("sirens")) w += 1.2;
+        if (tags.includes("crimewave")) w += 1.0;
+        if (tags.includes("night")) w += 0.8;
+      } else if (intensity === "calm") {
+        if (tags.includes("calm")) w += 0.9;
+        if (tags.includes("community")) w += 0.7;
+        if (tags.includes("coffee")) w += 0.6;
+      }
+
+      // Performance nudges
+      if (perf === "dire" || perf === "struggling") {
+        if (tags.includes("grim")) w += 0.9;
+        if (tags.includes("fear")) w += 0.7;
+        if (tags.includes("security")) w += 0.7;
+        if (tags.includes("bail")) w += 0.6;
+      }
+      if (perf === "excellent" || perf === "strong") {
+        if (tags.includes("victory")) w += 0.8;
+        if (tags.includes("justice")) w += 0.6;
+        if (tags.includes("relief")) w += 0.6;
+      }
+
+      // Editorial voice nudges (kept subtle)
+      if (voice) {
+        if (voice === "ia" && tags.includes("internalaffairs")) w += 1.0;
+        if (voice === "tough" && tags.includes("tough")) w += 0.6;
+        if (voice === "community" && tags.includes("community")) w += 0.6;
+      }
+
       // “City vibe” tags — you can use these later
       if (tags.includes("night") && focus.intensity > 0.4) w += 0.8;
       if (tags.includes("calm") && focus.intensity < 0.25) w += 0.6;
+
+      // Endgame tone boost (win/loss, reason, corruption, etc.)
+      if (toneW) {
+        for (const t of tags) {
+          const boost = toneW[t];
+          if (boost) w += 0.7 * boost;
+        }
+      }
+
+      // Narrative hooks: if the article text hints at paperwork/coffee/injury/etc.,
+      // prefer ads whose tags match those hooks.
+      if (hookSet.size) {
+        for (const t of tags) {
+          if (hookSet.has(t)) {
+            w += 1.8;
+            break;
+          }
+        }
+      }
 
       // If it’s an image ad but the file isn't there yet, slightly reduce weight
       if (ad.type === "image") w -= 0.2;
@@ -2777,15 +3382,22 @@ function setBeginShiftButton(isActive) {
     const host = $("#npAds");
     if (!host) return;
 
-    const ads = g?.selectedAds || [];
+    const raw = g?.selectedAds || [];
+    const ads = Array.isArray(raw) ? raw : [];
     if (!ads.length) {
-      host.innerHTML = "";
+      // Always render a placeholder so the paper doesn't look empty/broken.
+      host.innerHTML = `
+        <div class="news-ad">
+          <div class="ad-title">ADVERTISEMENT</div>
+          <div class="ad-body">No ad inventory available.</div>
+        </div>
+      `;
       return;
     }
 
     host.innerHTML = ads.map((ad, idx) => {
       const sizeClass = ads.length === 2 && idx === 1 ? "small" : "";
-      if (ad.type === "image") {
+      if (ad.type === "image" && ad.src) {
         // Use <img> but also fallback to a text ad look if missing
         const src = AD_BASE + ad.src;
         return `
@@ -2802,13 +3414,17 @@ function setBeginShiftButton(isActive) {
       }
 
       // Text ad
+      // Text ad (with legacy fallbacks)
+      const title = ad.title || ad.head || ad.label || "ADVERTISEMENT";
+      const body = ad.body || ad.text || "Local business message unavailable.";
+      const fine = ad.fine || "";
       return `
-      <div class="news-ad ${sizeClass}">
-        <div class="ad-title">${escapeHtml(ad.title)}</div>
-        <div class="ad-body">${escapeHtml(ad.body)}</div>
-        ${ad.fine ? `<div class="ad-fine">${escapeHtml(ad.fine)}</div>` : ""}
-      </div>
-    `;
+        <div class="news-ad ${sizeClass}">
+          <div class="ad-title">${escapeHtml(title)}</div>
+          <div class="ad-body">${escapeHtml(body)}</div>
+          ${fine ? `<div class="ad-fine">${escapeHtml(fine)}</div>` : ""}
+        </div>
+      `;
     }).join("");
   }
 
@@ -2819,7 +3435,10 @@ function setBeginShiftButton(isActive) {
     const count = Math.random() < 0.55 ? 1 : 2;
 
     const focus = getGameFocusProfile(g); // {primary, secondary, intensity}
-    const weighted = buildWeightedAdPool(focus);
+    const tone = g.reportTone || null;
+    const sum = g.reportSummary || null;
+    const hooks = g.reportHooks || sum?.ctx?.hooks || [];
+    const weighted = buildWeightedAdPool(focus, tone, sum, hooks);
 
     // Pick unique ads by weighted draw (safe: supports missing ids and prevents infinite loops)
     const picked = [];
@@ -2920,6 +3539,8 @@ function setBeginShiftButton(isActive) {
     const node = document.querySelector("#newsprint");
     if (!node) return;
 
+    try {
+
     // Make sure fonts/layout are settled
     await waitNextFrame();
     await waitNextFrame();
@@ -2945,25 +3566,51 @@ function setBeginShiftButton(isActive) {
     </svg>
   `.trim();
 
-    const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svgBlob);
+      const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(svgBlob);
 
-    try {
-      const img = await loadImage(url);
+      try {
+        const img = await loadImage(url);
 
-      const canvas = document.createElement("canvas");
-      const scale = 2; // sharper output
-      canvas.width = width * scale;
-      canvas.height = height * scale;
+        const canvas = document.createElement("canvas");
+        const scale = 2; // sharper output
+        canvas.width = width * scale;
+        canvas.height = height * scale;
 
-      const ctx = canvas.getContext("2d");
-      ctx.setTransform(scale, 0, 0, scale, 0, 0);
-      ctx.drawImage(img, 0, 0);
+        const ctx = canvas.getContext("2d");
+        // Some browsers can return null here in restricted contexts
+        if (!ctx) throw new Error("Canvas unavailable");
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.drawImage(img, 0, 0);
 
-      const pngUrl = canvas.toDataURL("image/png");
-      downloadDataUrl(pngUrl, makeNewsFilename());
-    } finally {
-      URL.revokeObjectURL(url);
+        const pngUrl = canvas.toDataURL("image/png");
+        downloadDataUrl(pngUrl, makeNewsFilename());
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.warn("Save as Image failed", e);
+      // iOS Safari (and some in-app browsers) can block foreignObject rendering.
+      openInfoModal({
+        title: "Save as Image",
+        modalType: "saveImageHelp",
+        bodyHtml: `
+          <div class="item">
+            <div class="item-text">Your browser blocked the image export method used by the app.</div>
+          </div>
+          <div class="item">
+            <div class="item-title">Workarounds</div>
+            <div class="item-text">
+              <ul style="margin:8px 0 0 18px;">
+                <li>Try Chrome or Edge on desktop.</li>
+                <li>On iPhone/iPad, try opening in Safari (not an in-app browser) and retry.</li>
+                <li>As a fallback, take a screenshot of the Shift Report.</li>
+              </ul>
+            </div>
+          </div>
+        `,
+        primaryText: "OK"
+      });
     }
   }
 
@@ -3040,8 +3687,12 @@ function setBeginShiftButton(isActive) {
   }
 
 
-  function renderNewspaperArticle(outcome, reason) {
+  async function renderNewspaperArticle(outcome, reason) {
+    await ensureReportExtras(outcome, reason);
     const a = buildNewspaperArticle(outcome, reason);
+
+    const paperEl = document.querySelector("#npPaperTitle");
+    if (paperEl && a.paperTitle) paperEl.textContent = a.paperTitle;
 
     $("#npMasthead").textContent = a.masthead;
     $("#npDateline").textContent = a.dateline;
@@ -3051,61 +3702,492 @@ function setBeginShiftButton(isActive) {
 
     $("#npHeadline").textContent = a.headline;
     $("#npSubhead").textContent = a.subhead;
-    $("#npBody").innerHTML = a.body.map(p => `<p>${escapeHtml(p)}</p>`).join("");
+    // Templates often return sentence-sized fragments; newspapers typically combine
+    // sentences into fewer, longer paragraphs for a more natural look.
+    const groupedParas = (function groupIntoParagraphs(lines){
+      const arr = Array.isArray(lines) ? lines.filter(Boolean) : [];
+      if (arr.length <= 2) return arr;
+
+      // Aim for 2 paragraphs. We'll pack sentences into the first until we hit a
+      // reasonable length, then put the remainder into the second.
+      const targetLen = 520; // ~1-2 short paragraphs on mobile, 2 on desktop
+      let p1 = "";
+      let i = 0;
+      for (; i < arr.length; i++) {
+        const next = (p1 ? (p1.endsWith("-") ? "" : " ") : "") + arr[i];
+        if (p1.length && next.length > targetLen) break;
+        p1 = next;
+      }
+      const p2 = arr.slice(i).join(" ");
+      const out = [];
+      if (p1.trim()) out.push(p1.trim());
+      if (p2.trim()) out.push(p2.trim());
+      return out.length ? out : arr;
+    })(a.body);
+
+    $("#npBody").innerHTML = groupedParas.map(p => `<p>${escapeHtml(p)}</p>`).join("");
+
+    // Sidebar: police blotter + editorial aside (optional)
+    const blot = Array.isArray(a.blotter) ? a.blotter : [];
+    const blotEl = document.querySelector("#npBlotter");
+    if (blotEl) blotEl.innerHTML = blot.map(x => `<li>${escapeHtml(x)}</li>`).join("") || `<li>${escapeHtml(pickFrom(["No incidents reported.", "No additional reports filed."], "No incidents reported."))}</li>`;
+
+    const asideEl = document.querySelector("#npAside");
+    const asideBox = document.querySelector("#npAsideBox");
+    if (asideEl && asideBox) {
+      if (a.editorialAside) {
+        asideEl.textContent = a.editorialAside;
+        asideBox.classList.remove("hidden");
+      } else {
+        asideEl.textContent = "";
+        asideBox.classList.add("hidden");
+      }
+    }
+  }
+
+  async function ensureReportExtras(outcome, reason) {
+    // Older saved games (or edge cases) may not have selected ads/classifieds.
+    // Ensure we always have something to render for the end-of-shift article.
+    const g = state.game;
+    if (!g) return;
+
+    // If content failed to load for some reason (common symptom: "No ad inventory available"),
+    // try one more reload before selecting ads/classifieds.
+    if (!CONTENT_LOADED_ONCE || (CONTENT.ads.length === 0 && CONTENT.classifieds.length === 0)) {
+      try {
+        await loadContent();
+      } catch (e) {
+        console.warn("Report content reload failed", e);
+      }
+    }
+
+    let changed = false;
+
+    // Ensure we have narrative hooks for weighting ad/classified selection.
+    // (These are emitted when the article is built.)
+    if (!Array.isArray(g.reportHooks) || g.reportHooks.length === 0) {
+      try {
+        const o = outcome || g.endOutcome || "loss";
+        const r = reason || g.endReason || "crime_track_max";
+        buildNewspaperArticle(o, r);
+        changed = true;
+      } catch (e) {
+        console.warn("Report hook build failed", e);
+      }
+    }
+
+    if (!Array.isArray(g.selectedAds) || g.selectedAds.length === 0) {
+      g.selectedAds = pickAdsForReport();
+      changed = true;
+    }
+
+    if (!Array.isArray(g.selectedClassifieds) || g.selectedClassifieds.length === 0) {
+      g.selectedClassifieds = pickClassifiedsForReport();
+      changed = true;
+    }
+
+    if (changed) saveState();
   }
 
 
-  function buildNewspaperArticle(outcome, reason) {
-    const g = state.game;
+  // -------------------------
+  // Endgame Summary + Newspaper Templates
+  // -------------------------
 
-    const overall = getOverallRate();
-    const inv = getSuccessRate("investigation");
-    const arr = getSuccessRate("arrest");
-    const eme = getSuccessRate("emergency");
+  function buildEndgameSummary(outcome, reason, g) {
+    const overallRate = getOverallRate();
+    const actions = getOverallActions();
+
+    const invRate = getSuccessRate("investigation");
+    const arrRate = getSuccessRate("arrest");
+    const emeRate = getSuccessRate("emergency");
+
+    const invTotal = (g?.categories?.investigation?.success || 0) + (g?.categories?.investigation?.fail || 0);
+    const arrTotal = (g?.categories?.arrest?.success || 0) + (g?.categories?.arrest?.fail || 0);
+    const emeTotal = (g?.categories?.emergency?.success || 0) + (g?.categories?.emergency?.fail || 0);
 
     const cats = [
-      { k:"investigation", r:inv, total: g.categories.investigation.success + g.categories.investigation.fail },
-      { k:"arrest", r:arr, total: g.categories.arrest.success + g.categories.arrest.fail },
-      { k:"emergency", r:eme, total: g.categories.emergency.success + g.categories.emergency.fail }
+      { k: "investigation", r: invRate, total: invTotal },
+      { k: "arrest", r: arrRate, total: arrTotal },
+      { k: "emergency", r: emeRate, total: emeTotal }
     ];
 
-    const best = [...cats].sort((a,b)=>b.r-a.r)[0];
-    const worst = [...cats].sort((a,b)=>a.r-b.r)[0];
+    const best = [...cats].sort((a, b) => b.r - a.r)[0];
+    const worst = [...cats].sort((a, b) => a.r - b.r)[0];
 
-    const actions = getOverallActions();
-    const commTotal = g.commendations.investigation + g.commendations.arrest + g.commendations.emergency;
-    const dispatchCount = g.log.filter(x => x.type === "dispatch").length;
-    const crisisCount = g.log.filter(x => x.type === "crisis" && x.status === "started").length;
+    const commTotal = (g?.commendations?.investigation || 0) + (g?.commendations?.arrest || 0) + (g?.commendations?.emergency || 0);
+    const dispatchApplied = (g?.log || []).filter(x => x.type === "dispatch").length;
+    const crisisStarted = (g?.log || []).filter(x => x.type === "crisis" && x.status === "started").length;
+    const crisisResolved = (g?.log || []).filter(x => x.type === "crisis" && x.status === "resolved").length;
+    const crisisFailed = (g?.log || []).filter(x => x.type === "crisis" && x.status === "failed").length;
 
-    const reasonText = outcome === "win"
-        ? (reason === "caught_before_appeared" ? "before the suspect could fully surface" : "after the suspect emerged and the pressure spiked")
-        : (reason === "crime_track_max" ? "as crime overflowed the city’s limits"
-            : reason === "calendar_ran_out" ? "as the calendar ran out on the task force"
-                : "after the trail went cold and the suspect slipped away");
+    const cluesFound = g?.categories?.investigation?.points || 0;
+    const thugsArrested = g?.categories?.arrest?.points || 0;
 
-    const headline = outcome === "win"
-        ? "CASE CLOSED: CITY BREATHES AGAIN"
-        : "CASE GOES COLD: CITY LEFT ON EDGE";
+    // Intensity band (drives wording tone)
+    const intensity = actions <= 10 ? "calm" : (actions <= 18 ? "steady" : "chaos");
 
-    const subhead = `${g.players}-unit shift logs ${actions} field actions with ${fmtPct(overall)} overall success — ${reasonText}.`;
+    // Convert numbers into newspaper-friendly language bands (keep raw values internal)
+    const performanceKey = rateBand(overallRate);
+    const paceKey = actionsBand(actions);
 
-    const p1 =
-        `A coordinated ${g.players}-unit detail worked the streets through a tense shift, balancing leads, arrests, and emergencies as the city’s pressure mounted. ` +
-        `By shift’s end, the unit posted ${fmtPct(overall)} overall success across all actions, with ${fmtPct(best.r)} performance in ${cap(best.k)} standing out as the day’s strongest pillar.`;
+    // Which arm of the precinct carried the night (for narrative focus)
+    const focusProfile = getGameFocusProfile(g);
+    const focusKey = focusProfile.primary || "investigation";
 
-    const p2 =
-        `Not every channel held steady. ${cap(worst.k)} proved the roughest stretch, landing at ${fmtPct(worst.r)} and forcing the unit to compensate in the field. ` +
-        `Commendations were issued ${commTotal} time(s), reflecting moments of sharp execution under pressure.`;
+    // Outcome bucket
+    const outcomeKey = outcome === "win" ? "win" : (reason === "crime_track_max" ? "loss_crimewave" : "loss_unsolved");
 
-    const p3 =
-        `Dispatch traffic remained active (${dispatchCount} advisories) and the city tested the squad with ${crisisCount} major incident(s). ` +
-        `Veteran observers noted that the unit’s rhythm — particularly in ${cap(best.k)} — likely shaped the final outcome more than any single roll of fate.`;
+    // Pull some stable “board flavor” from setup rolls (no extra input needed)
+    const blocks = getReportContext(); // { weaponBlock, witnessBlock, hotBlock }
 
-    const masthead = "POLICE PRECINCT — SHIFT REPORT";
+    // Neighborhood flavor: pick a few recurring Commonville districts deterministically
+    const neighborhoods = pickNeighborhoods(blocks, g?.caseFile || "");
 
-    const dateline = `${formatLongDate(new Date())} • Precinct Desk • Case File ${g.caseFile || "PP-????"}`;
+    // Notable events: short, human lines from the log
+    const notable = [];
+    const log = g?.log || [];
+    const lastComm = log.find(x => x.type === "commendation");
+    const lastDispatch = log.find(x => x.type === "dispatch" && typeof x.text === "string");
+    if (crisisFailed > 0) notable.push("A major incident slipped past the response window.");
+    if (lastDispatch?.text) notable.push(`Radio traffic included: ${trimSentence(lastDispatch.text, 90)}`);
+    if (lastComm?.text) notable.push(`Commendation noted: ${trimSentence(lastComm.text, 90)}`);
 
-    return { masthead, dateline, headline, subhead, body: [p1, p2, p3] };
+    // Determine a light editorial voice (subtle bias)
+    const dirtyMode = state.setupDraft?.dirtyMode || null;
+    let voiceKey = "community";
+    if (dirtyMode === "ia") voiceKey = "ia";
+    else if (performanceKey === "dire" || performanceKey === "struggling") voiceKey = "supportive";
+    else if (outcomeKey === "loss_unsolved") voiceKey = "skeptical";
+    else voiceKey = (Math.random() < 0.55 ? "tough" : "community");
+
+    const cityMood = cityMoodFor(outcomeKey, performanceKey, intensity);
+
+    // Template context (placeholders)
+    const ctx = {
+      paperName: "THE COMMONVILLE GAZETTE",
+      players: g?.players || 0,
+      actions,
+      // Raw stats remain available for internal use, but templates should prefer the language bands below.
+      overallPct: fmtPct(overallRate),
+      bestCat: cap(best.k),
+      bestPct: fmtPct(best.r),
+      worstCat: cap(worst.k),
+      worstPct: fmtPct(worst.r),
+      performanceKey,
+      paceKey,
+      cityMood,
+      districtA: neighborhoods[0] || "Commonville",
+      districtB: neighborhoods[1] || "Downtown",
+      districtC: neighborhoods[2] || "Westside",
+      voiceKey,
+      focusCat: cap(focusKey),
+      commTotal,
+      dispatchCount: dispatchApplied,
+      crisisCount: crisisStarted,
+      crisisResolved,
+      crisisFailed,
+      cluesFound,
+      thugsArrested,
+      caseFile: g?.caseFile || "PP-????",
+      dateLong: formatLongDate(new Date(g?.endedAt || Date.now())),
+      outcomeLabel: outcome === "win" ? "Win" : "Loss",
+      reasonLabel: humanizeEndReason(outcome, reason),
+      weaponBlock: blocks.weaponBlock,
+      witnessBlock: blocks.witnessBlock,
+      hotBlock: blocks.hotBlock,
+      intensity,
+      performanceKey,
+      paceKey,
+      cityMood,
+      voiceKey,
+      neighborhoodA: neighborhoods[0] || "Downtown",
+      neighborhoodB: neighborhoods[1] || "Riverview",
+      neighborhoodC: neighborhoods[2] || "Westgate",
+      notable1: notable[0] || "",
+      notable2: notable[1] || "",
+      notable3: notable[2] || ""
+    };
+
+    return {
+      outcomeKey,
+      intensity,
+      focusKey,
+      best,
+      worst,
+      tags: g?.reportTone?.tagWeights || null,
+      ctx
+    };
+  }
+
+  function trimSentence(s, maxLen) {
+    const str = String(s || "").trim();
+    if (str.length <= maxLen) return str;
+    return str.slice(0, Math.max(0, maxLen - 1)).trimEnd() + "…";
+  }
+
+  function pickFrom(arr, fallback = "") {
+    if (!Array.isArray(arr) || !arr.length) return fallback;
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // Template segments can be either:
+  //  - a string
+  //  - an object: { text: string, hooks?: string[] }
+  // This helper normalizes the selection and returns both the text and any narrative hooks.
+  function pickSegment(arr, fallbackText = "") {
+    const picked = pickFrom(arr, null);
+    if (!picked) return { text: fallbackText, hooks: [] };
+    if (typeof picked === "string") return { text: picked, hooks: [] };
+    if (typeof picked === "object") {
+      const text = picked.text ?? picked.tpl ?? picked.value ?? "";
+      const hooks = Array.isArray(picked.hooks) ? picked.hooks.filter(Boolean) : [];
+      return { text: String(text || fallbackText), hooks };
+    }
+    return { text: String(picked), hooks: [] };
+  }
+
+  // Pick up to `count` unique segments from an array (strings or {text, hooks}).
+  // Uses a shuffled copy so we don't repeatedly grab the same line.
+  function pickManySegments(arr, count) {
+    if (!Array.isArray(arr) || !arr.length || !count || count <= 0) return [];
+    const copy = arr.slice();
+    // Fisher–Yates shuffle
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = copy[i];
+      copy[i] = copy[j];
+      copy[j] = tmp;
+    }
+    const out = [];
+    const want = Math.min(count, copy.length);
+    for (let i = 0; i < want; i++) {
+      out.push(pickSegment([copy[i]], ""));
+    }
+    return out;
+  }
+
+  function wordCount(str) {
+    return String(str || "").trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  function uniqStrings(arr) {
+    const out = [];
+    const s = new Set();
+    for (const x of (arr || [])) {
+      const k = String(x || "").trim().toLowerCase();
+      if (!k) continue;
+      if (s.has(k)) continue;
+      s.add(k);
+      out.push(k);
+    }
+    return out;
+  }
+
+  // -------------------------
+  // Newspaper language helpers
+  // -------------------------
+
+  function rateBand(rate) {
+    const r = clampNum(rate || 0, 0, 1);
+    if (r >= 0.78) return "excellent";
+    if (r >= 0.65) return "strong";
+    if (r >= 0.5) return "mixed";
+    if (r >= 0.35) return "struggling";
+    return "dire";
+  }
+
+  function actionsBand(actions) {
+    const a = Math.max(0, actions || 0);
+    if (a <= 8) return "quiet";
+    if (a <= 16) return "busy";
+    return "nonstop";
+  }
+
+  function cityMoodFor(outcomeKey, performanceKey, intensity) {
+    const isWin = outcomeKey === "win";
+    if (isWin && performanceKey === "excellent") return "relieved and energized";
+    if (isWin) return "relieved";
+    if (outcomeKey === "loss_crimewave") return intensity === "chaos" ? "frayed" : "uneasy";
+    // loss_unsolved
+    if (performanceKey === "strong" || performanceKey === "excellent") return "restless";
+    return "on edge";
+  }
+
+  function stableHash(str) {
+    const s = String(str || "");
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0);
+  }
+
+  function pickNeighborhoods(blocks, seedStr) {
+    const neighborhoods = [
+      "Old Harbor",
+      "Railyard District",
+      "Maple Heights",
+      "South Commons",
+      "Riverview",
+      "Market Square",
+      "Bricktown",
+      "Westgate",
+      "Northside",
+      "Pineview",
+      "The Flats",
+      "Civic Center"
+    ];
+    const base = stableHash(`${seedStr}|${blocks?.weaponBlock}|${blocks?.witnessBlock}|${blocks?.hotBlock}`);
+    const a = neighborhoods[base % neighborhoods.length];
+    const b = neighborhoods[(base >>> 5) % neighborhoods.length];
+    const c = neighborhoods[(base >>> 11) % neighborhoods.length];
+    // ensure variety
+    const uniq = [...new Set([a, b, c])];
+    while (uniq.length < 3) {
+      uniq.push(neighborhoods[(base + uniq.length * 7) % neighborhoods.length]);
+    }
+    return uniq.slice(0, 3);
+  }
+
+  function buildBlotterLines(templates, ctx, sum) {
+    const bank = (templates && templates.blotter) || {};
+    const lines = [];
+
+    const districts = [ctx.neighborhoodA, ctx.neighborhoodB, ctx.neighborhoodC].filter(Boolean);
+    const outcomeGroup = sum.outcomeKey === "win" ? "win" : "loss";
+    const focusGroup = (sum.focusKey || "investigation").toLowerCase();
+
+    const pools = [];
+    if (bank[outcomeGroup]) pools.push(bank[outcomeGroup]);
+    if (bank[focusGroup]) pools.push(bank[focusGroup]);
+    if (bank.default) pools.push(bank.default);
+    const pool = pools.flat().filter(Boolean);
+
+    // Fallback if templates are missing
+    if (!pool.length) {
+      return [
+        `${districts[0] || "Commonville"} — Units responded to a late-night call; scene cleared without further incident.`,
+        `${districts[1] || "Commonville"} — Patrol presence increased as residents reported disturbances.`,
+        `${districts[2] || "Commonville"} — A routine stop produced a brief delay; traffic resumed shortly after.`
+      ];
+    }
+
+    // Pick 3 unique-ish entries
+    const used = new Set();
+    for (let i = 0; i < 3; i++) {
+      let tpl = "";
+      for (let tries = 0; tries < 6; tries++) {
+        const candidate = pickFrom(pool, "");
+        if (!candidate) continue;
+        if (!used.has(candidate)) { tpl = candidate; used.add(candidate); break; }
+      }
+      if (!tpl) tpl = pickFrom(pool, "");
+      const district = districts[i % districts.length] || "Commonville";
+      const line = applyTemplate(tpl, { ...ctx, district });
+      lines.push(line);
+    }
+    return lines;
+  }
+
+  function buildNewspaperArticle(outcome, reason) {
+    const g = state.game;
+    const templates = CONTENT.articleTemplates || getDefaultArticleTemplates();
+    const sum = buildEndgameSummary(outcome, reason, g);
+    const ctx = sum.ctx;
+
+    // Collect narrative hooks from selected template segments.
+    // These hooks are used to weight ad + classifieds selection so the layout feels intentional
+    // (e.g., an overtime/paperwork paragraph increases the chance of a paper company ad).
+    const hooks = [];
+
+    // Masthead + byline
+    const paperTitle = (templates.masthead?.title) || ctx.paperName || "THE COMMONVILLE GAZETTE";
+    const kicker = pickFrom(templates.kickers, "Gazette Desk");
+    const mastheadTpl = pickFrom(templates.mastheads, "FROM THE POLICE BEAT");
+    const masthead = applyTemplate(mastheadTpl, ctx);
+    const dateline = `${ctx.dateLong} • ${kicker} • Case File ${ctx.caseFile}`;
+
+    // Headline + subhead (avoid raw stats; use language bands)
+    const headlineMap = templates.headline || templates.headlines || {};
+    const subheadMap = templates.subhead || templates.subheads || {};
+    const headlineSeg = pickSegment(headlineMap[sum.outcomeKey], "SHIFT REPORT");
+    const subheadSeg = pickSegment(subheadMap[ctx.performanceKey] || subheadMap.mixed || [], "A demanding shift tested officers across multiple fronts.");
+    hooks.push(...headlineSeg.hooks, ...subheadSeg.hooks);
+
+    const headline = applyTemplate(headlineSeg.text, ctx);
+    const subhead = applyTemplate(subheadSeg.text, ctx);
+
+    // Body: build a longer "real" article out of multiple snippets,
+    // then pack them into 1–2 newspaper-style paragraphs.
+    const bodyBank = templates.body || (templates.paragraphs || {});
+    const openingArr = bodyBank.opening || bodyBank.intro?.[sum.outcomeKey] || bodyBank.intro?.default || [];
+    const focusKey = ("focus_" + (sum.focusKey || "investigation")).toLowerCase();
+    const focusArr = bodyBank[focusKey] || bodyBank.focus_investigation || [];
+    const pressureKey = sum.intensity === "steady" ? "busy" : (sum.intensity === "chaos" ? "chaotic" : "calm");
+    const pressureArr = bodyBank["pressure_" + pressureKey] || bodyBank["pressure_" + sum.intensity] || bodyBank.pressure_calm || [];
+    const closingMap = templates.closing || (templates.paragraphs || {}).close || {};
+    const closingKey = sum.outcomeKey === "win" ? "win" : "loss";
+    const closingArr = closingMap[sum.outcomeKey] || closingMap[closingKey] || closingMap.default || [];
+
+    // Select more snippets so the article doesn't collapse into 2 sentences.
+    // Counts scale slightly with intensity.
+    const openingSegs = pickManySegments(openingArr, 2);
+    const focusSegs = pickManySegments(focusArr, sum.intensity === "chaos" ? 4 : 3);
+    const pressureSegs = pickManySegments(pressureArr, sum.intensity === "chaos" ? 2 : 1);
+    const closingSegs = pickManySegments(closingArr, 2);
+
+    const allSegs = [...openingSegs, ...focusSegs, ...pressureSegs, ...closingSegs]
+      .filter(s => s && String(s.text || "").trim());
+    hooks.push(...allSegs.flatMap(s => s.hooks || []));
+
+    const fragments = allSegs.map(s => applyTemplate(s.text, ctx)).filter(Boolean);
+
+    // Pack fragments into 1–2 paragraphs so it reads like an article.
+    // If we somehow end up short, just keep everything in one paragraph.
+    const para1Target = 90; // words
+    const para2Target = 80; // words
+    const p1Parts = [];
+    const p2Parts = [];
+    let wc1 = 0;
+    let wc2 = 0;
+    for (const frag of fragments) {
+      const w = wordCount(frag);
+      // Fill paragraph 1 until we hit target and have at least 3 fragments.
+      if (wc1 < para1Target || p1Parts.length < 3) {
+        p1Parts.push(frag);
+        wc1 += w;
+      } else {
+        p2Parts.push(frag);
+        wc2 += w;
+      }
+    }
+    // If paragraph 2 is too tiny, merge it back.
+    const para1 = p1Parts.join(" ").trim();
+    let para2 = p2Parts.join(" ").trim();
+    if (p2Parts.length < 2 || wc2 < 35) {
+      para2 = "";
+    }
+    const body = [para1, para2].filter(Boolean);
+
+    // Optional editorial aside (subtle bias)
+    const asideBank = templates.editorial_asides || {};
+    const asideSeg = pickSegment(asideBank[ctx.voiceKey] || asideBank.default || [], "");
+    hooks.push(...asideSeg.hooks);
+    const editorialAside = asideSeg.text ? applyTemplate(asideSeg.text, ctx) : "";
+
+    // Police blotter sidebar
+    const blotter = buildBlotterLines(templates, ctx, sum);
+
+    // Store hooks on the run so ads/classifieds can be chosen consistently.
+    const uniqHooks = uniqStrings(hooks);
+    if (g) {
+      g.reportHooks = uniqHooks;
+      if (g.reportSummary?.ctx) g.reportSummary.ctx.hooks = uniqHooks;
+    }
+
+    return { paperTitle, masthead, dateline, headline, subhead, body, blotter, editorialAside, hooks: uniqHooks };
   }
 
   function updateDispatchFades() {

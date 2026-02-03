@@ -27,7 +27,7 @@ body{
   background: radial-gradient(1200px 800px at 40% 0%, #15213a 0%, var(--bg) 55%, #070b12 100%);
   color:var(--text);
   overflow:hidden; /* keep main screens non-scrolling */
-  background-image: url('background3.png');
+  background-image: url('assets/images/background.png');
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -232,15 +232,17 @@ justify-content: center;
   font-size: 13px;
 }
 .grid-3{
-  height: calc(100% - 64px - 12px); /* subtract footer/topbar/strip approx */
+  /* height: calc(100% - 64px - 12px); */ /* subtract footer/topbar/strip approx */
   display:grid;
   grid-template-columns: 1fr;
   gap: 10px;
 }
 @media (min-width: 720px){
+/*
   .grid-3{
     grid-template-columns: 1fr 1fr 1fr;
   }
+*/
 }
 
 /* Cards */
@@ -259,8 +261,8 @@ justify-content: center;
   grid-template-columns: auto 1fr auto;
   align-items:center;
   margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom:1px solid var(--line);
+  /* padding-bottom: 10px; */
+  /* border-bottom:1px solid var(--line); */
 }
 .card-title{
   font-weight: 800;
@@ -297,7 +299,7 @@ justify-content: center;
   background: linear-gradient(180deg, rgba(77,71,26,0.8), rgba(36,29,26,0.8));
 }
 .card-arrest{
-  background: linear-gradient(180deg, rgba(22,14,77,0.8), rgba(22,14,33,0.8));
+  background: linear-gradient(180deg, rgba(42,34,77,0.8), rgba(42,34,33,0.8));
 }
 .card-emergency{
   background: linear-gradient(180deg, rgba(73,14,26,0.8), rgba(40,14,26,0.8));
@@ -361,7 +363,15 @@ justify-content: center;
 }
 .bar{
   height: 100%;
-  background: linear-gradient(90deg, rgba(74,163,255,.8), rgba(38,208,124,.8));
+}
+.card-investigation .bar {
+  background: rgba(155,155,0,1); /* linear-gradient(90deg, rgba(74,163,255,.8), rgba(38,208,124,.8)); */
+}
+.card-arrest .bar {
+  background: rgba(100,100,200,1);
+}
+.card-emergency .bar {
+  background: rgba(155,0,0,1);
 }
 
 /* Active dispatch strip */
@@ -403,6 +413,17 @@ justify-content: center;
   align-items:center;
   justify-content:space-between;
   margin-top: 10px;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* z-index: 9999; */
+  padding: 0 10px;
+  /* font-size: 12px; */
+  /* text-align: center; */
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  position: fixed;
 }
 .footer-left, .footer-right{ display:flex; align-items:center; gap:10px; }
 
@@ -415,6 +436,7 @@ justify-content: center;
   align-items:center;
   justify-content:center;
   padding: 14px;
+  z-index: 9;
 }
 .modal{
   width: min(720px, 100%);
@@ -596,6 +618,18 @@ body.no-scroll{ overflow:hidden; }
   padding: 0 10px;
   outline:none;
 }
+
+/* Read-only value block (used in Shift Report once outcome is selected earlier) */
+.value{
+  height: 40px;
+  border-radius: 12px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.02);
+  color: var(--text);
+  padding: 0 10px;
+  display:flex;
+  align-items:center;
+}
 .row{
   display:flex;
   gap:10px;
@@ -656,6 +690,18 @@ hr.sep{
   font-size: 13px;
 }
 
+/* Credits modal helpers */
+.credits-actions{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.item.donate{
+  border-color: rgba(38,208,124,.35);
+  background: linear-gradient(180deg, rgba(18,108,14,.20), rgba(255,255,255,.03));
+}
+
 .hidden{ display:none !important; }
 
 
@@ -678,8 +724,8 @@ hr.sep{
   align-items:center;
   gap:10px;
 
-  margin: 10px 0 12px;
-  padding: 10px 12px;
+  margin: 0 0 12px;
+  padding: 0 12px;
   border-radius: 14px;
   border: 1px solid rgba(155,255,155,.20);
   background:
@@ -944,8 +990,7 @@ hr.sep{
   letter-spacing: 0.18em;
   text-transform: uppercase;
   opacity: 0.75;
-  border-bottom: 1px solid rgba(0,0,0,0.25);
-  padding-bottom: 6px;
+  text-align: center;
   margin-bottom: 10px;
 }
 
@@ -965,18 +1010,35 @@ hr.sep{
 .newsprint-body{
   font-size: 0.95rem;
   line-height: 1.35;
+  /* Newspapers are typically justified (aligned left & right).
+     Hyphenation support varies by browser, but this improves the look where available. */
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 .newsprint-body p{
   margin: 0 0 10px 0;
+  text-align: justify;
+  text-justify: inter-word;
 }
 
 .newsprint-paper{
-  font-size: 0.75rem;
-  letter-spacing: 0.22em;
+  /* Newspaper title / masthead */
+  font-size: 2.0rem;
+  font-weight: 900;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
-  opacity: 0.7;
-  margin-bottom: 6px;
+  opacity: 0.95;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+/* Thin rule under the title to sell the newspaper look */
+#npPaperTitle{
+  padding-bottom: 6px;
+  border-bottom: 2px solid rgba(0,0,0,0.65);
 }
 
 .newsprint-dateline{
@@ -985,6 +1047,57 @@ hr.sep{
   border-bottom: 1px solid rgba(0,0,0,0.25);
   padding-bottom: 8px;
   margin-bottom: 10px;
+}
+
+.newsprint-grid{
+  display:grid;
+  grid-template-columns: 1fr 220px;
+  gap: 14px;
+  align-items:start;
+}
+
+@media (max-width: 640px){
+  .newsprint-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+.newsprint-sidebar{
+  font-size: 0.84rem;
+}
+
+.np-box{
+  border: 1px solid rgba(0,0,0,0.25);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.22);
+  margin-bottom: 10px;
+}
+
+.np-box-title{
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  opacity: 0.78;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed rgba(0,0,0,0.35);
+  padding-bottom: 6px;
+}
+
+.np-bullets{
+  margin: 0;
+  padding-left: 18px;
+}
+
+.np-bullets li{
+  margin: 0 0 6px 0;
+  line-height: 1.2;
+}
+
+.np-aside{
+  line-height: 1.25;
+  opacity: 0.92;
 }
 
 .newsprint-ads{
