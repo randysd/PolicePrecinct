@@ -1,0 +1,13 @@
+{
+  "name": "pp-newsprint-export",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@cloudflare/puppeteer": "^1.0.0"
+  }
+}

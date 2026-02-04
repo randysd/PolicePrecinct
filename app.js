@@ -88,6 +88,14 @@
   const btnHowTo = $("#btnHowTo");
   const btnClearData = $("#btnClearData");
 
+  // Home: contextual/status UI
+  const homeStatusPrimary = $("#homeStatusPrimary");
+  const homeStatusSecondary = $("#homeStatusSecondary");
+  const btnHomeSecondary = $("#btnHomeSecondary");
+  const homeStickyBar = $("#homeStickyBar");
+  const btnHomeEndShift = $("#btnHomeEndShift");
+  const btnHomeResume = $("#btnHomeResume");
+
   const btnActivityLog = $("#btnActivityLog");
   const btnEndShift = $("#btnEndShift");
 
@@ -190,6 +198,9 @@ function showHome() {
     if (!state.game?.active) startNewGame();
     setActiveView(viewGame);
     renderGame();
+
+    // End Shift control is relevant while in-game
+    btnEndShift?.classList.remove("hidden");
 
     // Show the home badge when in-game so users can jump back to the home screen
     homeBadgeBtn?.classList.remove("hidden");
@@ -320,6 +331,26 @@ function showHome() {
       openSetupModal();
     });
 
+    // Home: contextual "next best" action (Setup when no shift, Case Log when active)
+    btnHomeSecondary?.addEventListener("click", async () => {
+      await audio.userGestureKick();
+      if (state.game?.active) {
+        openLogModal();
+      } else {
+        openSetupModal();
+      }
+    });
+
+    // Home: sticky shift controls
+    btnHomeResume?.addEventListener("click", async () => {
+      await audio.userGestureKick();
+      location.hash = "#/game";
+    });
+    btnHomeEndShift?.addEventListener("click", async () => {
+      await audio.userGestureKick();
+      openEndShiftConfirmModal();
+    });
+
     btnSettings.addEventListener("click", async () => {
       await audio.userGestureKick();
       openSettingsModal();
@@ -358,6 +389,27 @@ function showHome() {
     btnHowTo.addEventListener("click", async () => {
       await audio.userGestureKick();
       openHowToModal();
+    });
+
+    // Home: contextual secondary CTA
+    btnHomeSecondary?.addEventListener("click", async () => {
+      await audio.userGestureKick();
+      if (state.game?.active) {
+        openLogModal();
+      } else {
+        openSetupModal();
+      }
+    });
+
+    // Home: sticky bar controls (only visible when shift active)
+    btnHomeResume?.addEventListener("click", async () => {
+      await audio.userGestureKick();
+      location.hash = "#/game";
+    });
+
+    btnHomeEndShift?.addEventListener("click", async () => {
+      await audio.userGestureKick();
+      openEndShiftConfirmModal();
     });
 
     // Action headers (center instruction text)
@@ -1971,6 +2023,7 @@ function openStartingPlayerSelector() {
       footerButtons: [
         { text: "Copy Article", className: "btn", onClick: () => copyToClipboard(buildArticleText()) },
         { text: "Save as Image", className: "btn", onClick: () => saveNewsprintAsImage() },
+        { text: "Save as PDF", className: "btn", onClick: () => saveNewsprintAsPdfServer() },
         {
           text: "End & Return Home",
           className: "btn warn",
@@ -2751,9 +2804,32 @@ Crises encountered: ${g.log.filter(x=>x.type==="crisis" && x.status==="started")
   // -------------------------
 
 function setBeginShiftButton(isActive) {
-  const textEl = btnBeginShift.querySelector(".pp-begin-text");
+  const textEl = btnBeginShift?.querySelector?.(".pp-begin-text");
   if (textEl) textEl.textContent = isActive ? "CONTINUE SHIFT" : "BEGIN SHIFT";
-  btnBeginShift.classList.toggle("continue-shift", !!isActive);
+  btnBeginShift?.classList.toggle("continue-shift", !!isActive);
+
+  // Home status card
+  if (homeStatusPrimary) {
+    homeStatusPrimary.textContent = isActive ? "Shift in progress" : "No active shift";
+  }
+  if (homeStatusSecondary) {
+    if (isActive && state.game) {
+      const p = state.game.players || 0;
+      const a = Array.isArray(state.game.log) ? state.game.log.length : 0;
+      homeStatusSecondary.textContent = `Players: ${p} • Actions logged: ${a}`;
+    } else {
+      homeStatusSecondary.textContent = "Ready when you are";
+    }
+  }
+
+  // Contextual secondary action label
+  if (btnHomeSecondary) {
+    btnHomeSecondary.textContent = isActive ? "Case Log" : "Setup Game";
+  }
+
+  // End Shift visibility: show only when a shift is active
+  btnEndShift?.classList.toggle("hidden", !isActive);
+  homeStickyBar?.classList.toggle("hidden", !isActive);
 }
 
 
@@ -3590,6 +3666,15 @@ function setBeginShiftButton(isActive) {
       }
     } catch (e) {
       console.warn("Save as Image failed", e);
+
+      // Try the server-side export (works on iOS / in-app browsers) if it's been deployed.
+      try {
+        await saveNewsprintAsImageServer();
+        return;
+      } catch (serverErr) {
+        console.warn("Server image export also failed", serverErr);
+      }
+
       // iOS Safari (and some in-app browsers) can block foreignObject rendering.
       openInfoModal({
         title: "Save as Image",
@@ -3604,6 +3689,7 @@ function setBeginShiftButton(isActive) {
               <ul style="margin:8px 0 0 18px;">
                 <li>Try Chrome or Edge on desktop.</li>
                 <li>On iPhone/iPad, try opening in Safari (not an in-app browser) and retry.</li>
+                <li>Try the <b>Save as PDF (Server)</b> option if available.</li>
                 <li>As a fallback, take a screenshot of the Shift Report.</li>
               </ul>
             </div>
@@ -3611,6 +3697,83 @@ function setBeginShiftButton(isActive) {
         `,
         primaryText: "OK"
       });
+    }
+  }
+
+  async function buildNewsprintHtmlDocument({ pageBg = "#0b1320", padding = 32 } = {}) {
+    const node = document.querySelector("#newsprint");
+    if (!node) throw new Error("#newsprint not found");
+
+    // Make sure fonts/layout are settled
+    await waitNextFrame();
+    await waitNextFrame();
+
+    const cloned = node.cloneNode(true);
+    inlineAllStyles(node, cloned);
+    await inlineImages(cloned);
+
+    return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    html, body { margin:0; padding:0; background:${pageBg}; }
+    body { display:flex; justify-content:center; padding:${padding}px; }
+    #newsprint { display:block; }
+  </style>
+</head>
+<body>
+  ${cloned.outerHTML}
+</body>
+</html>`;
+  }
+
+  async function saveNewsprintAsImageServer() {
+    const htmlDoc = await buildNewsprintHtmlDocument({ pageBg: "#0b1320", padding: 32 });
+
+    const res = await fetch("/api/newsprint.png", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html: htmlDoc })
+    });
+    if (!res.ok) throw new Error(`Server export failed: ${res.status}`);
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = makeNewsFilename();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function saveNewsprintAsPdfServer() {
+    const htmlDoc = await buildNewsprintHtmlDocument({ pageBg: "#ffffff", padding: 24 });
+
+    const res = await fetch("/api/newsprint.pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html: htmlDoc })
+    });
+    if (!res.ok) throw new Error(`Server PDF export failed: ${res.status}`);
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = makeNewsFilename().replace(/\.png$/i, ".pdf");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } finally {
+      URL.revokeObjectURL(url);
     }
   }
 

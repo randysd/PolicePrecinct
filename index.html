@@ -14,7 +14,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 
-  <link rel="stylesheet" href="styles.css?v=v14" />
+  <link rel="stylesheet" href="styles.css?v=v15" />
 </head>
 <body>
   <header class="app-header">
@@ -80,30 +80,48 @@
 </div>
 </div>
 
-          <div class="home-buttons">
+          <div class="home-cta">
 
-<button id="btnBeginShift" class="pp-begin-btn" type="button" style="width:300px; height: 80px">
-  <span class="pp-begin-text">BEGIN SHIFT</span>
-</button>
+            <!-- Shift status (updates automatically) -->
+            <div class="home-status" id="homeStatusCard" role="status" aria-live="polite">
+              <div class="home-status-primary" id="homeStatusPrimary">No active shift</div>
+              <div class="home-status-secondary" id="homeStatusSecondary">Ready when you are</div>
+            </div>
 
-<!--
-<button class="pp-begin-btn continue-shift" type="button" style="width:300px; height: 80px">
-  <span class="pp-begin-text">CONTINUE SHIFT</span>
-</button>
+            <!-- Primary action (Begin / Continue) -->
+            <button id="btnBeginShift" class="pp-begin-btn" type="button" style="width:300px; height: 80px">
+              <span class="pp-begin-text">BEGIN SHIFT</span>
+            </button>
 
-<button class="pp-begin-btn continue-shift" type="button" style="width:300px; height: 80px">
-  <span class="pp-begin-text continue-shift">SETTINGS</span>
-</button>
--->
-
-            <!-- <button class="btn primary" id="btnBeginShift">Begin Shift</button> -->
-            <button class="btn" id="btnSetup">Setup</button>
-            <button class="btn" id="btnSettings">Settings</button>
+            <!-- Contextual "next best" action (Setup / Case Log) -->
+            <button class="btn home-secondary-cta" id="btnHomeSecondary" type="button">
+              Setup Game
+            </button>
           </div>
 
-          <div class="home-secondary">
-            <button class="btn subtle" id="btnHowTo">How to Use</button>
-            <button class="btn subtle" id="btnClearData">Reset App Data</button>
+          <!-- Utilities grouped to reduce clutter -->
+          <div class="home-sections">
+            <div class="home-section">
+              <div class="home-section-title">Game</div>
+              <div class="home-grid-2">
+                <button class="btn" id="btnSetup">Setup</button>
+                <button class="btn" id="btnHowTo">How to Use</button>
+              </div>
+            </div>
+
+            <div class="home-section">
+              <div class="home-section-title">App</div>
+              <div class="home-grid-2">
+                <button class="btn" id="btnSettings">Settings</button>
+                <button class="btn subtle danger-outline" id="btnClearData">Reset App Data</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sticky bar (only visible while a shift is active) -->
+          <div id="homeStickyBar" class="home-sticky hidden" aria-label="Shift controls">
+            <button class="btn danger" id="btnHomeEndShift" type="button">End Shift</button>
+            <button class="btn primary" id="btnHomeResume" type="button">Resume</button>
           </div>
 <!--
           <div class="hint">
@@ -373,6 +391,6 @@ Investigation
     </div>
   </div>
 
-  <script src="app.js?v=v14"></script>
+  <script src="app.js?v=v15"></script>
 </body>
 </html>

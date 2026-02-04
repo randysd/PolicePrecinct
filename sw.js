@@ -1,12 +1,12 @@
 /* service-worker.js */
 // Bump this any time you change the precache list or caching strategy
-const CACHE_VERSION = "v14";
+const CACHE_VERSION = "v15";
 const CACHE_NAME = `pp-dispatcher-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pp-dispatcher-runtime-${CACHE_VERSION}`;
 
 const APP_SHELL = [  "./index.html",
-  "./styles.css?v=v11",
-  "./app.js?v=v11",
+  "./styles.css?v=v15",
+  "./app.js?v=v15",
   "./manifest.json",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",

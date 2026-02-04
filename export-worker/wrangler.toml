@@ -1,0 +1,11 @@
+name = "pp-newsprint-export"
+main = "src/index.ts"
+compatibility_date = "2026-02-04"
+compatibility_flags = ["nodejs_compat"]
+
+[browser]
+binding = "BROWSER"
+
+# Optional: set to something random and send it in the x-export-key header from the client
+# [vars]
+# EXPORT_KEY = "change-me"
